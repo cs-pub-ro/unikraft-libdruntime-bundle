@@ -1,0 +1,8 @@
+# Register your lib to Unikraft's build system
+$(eval $(call addlib_s,libmyandonlymylib,$(CONFIG_LIBMYANDONLYMYLIB)))
+
+# Add library source code to compilation
+LIBMYANDONLYMYLIB_SRCS-y += $(LIBMYANDONLYMYLIB_BASE)/myandonlymylib.c
+
+# Extend the global include paths with library's folder
+CINCLUDES-$(CONFIG_LIBMYANDONLYMYLIB) += -I$(LIBMYANDONLYMYLIB_BASE)/include

@@ -1,0 +1,3 @@
+config LIBMYANDONLYMYLIB
+           bool "myandonlymylib: My awesome lib"
+           default n

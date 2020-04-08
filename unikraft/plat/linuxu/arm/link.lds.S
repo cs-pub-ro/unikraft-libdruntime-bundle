@@ -1,0 +1,9 @@
+#include <common.lds.h>
+
+SECTIONS
+{
+	CTORTAB_SECTION
+
+	INITTAB_SECTION
+}
+INSERT BEFORE .rodata

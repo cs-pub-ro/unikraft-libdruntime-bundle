@@ -1,0 +1,135 @@
+#  SPDX-License-Identifier: BSD-3-Clause
+#
+#  pcre Makefile.uk
+#
+#  Authors: Costin Lupu <costin.lupu@cs.pub.ro>
+#
+#  Copyright (c) 2019, University Politehnica of Bucharest. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its
+#     contributors may be used to endorse or promote products derived from
+#     this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
+#
+
+################################################################################
+# Library registration
+################################################################################
+$(eval $(call addlib_s,libpcre,$(CONFIG_LIBPCRE)))
+#$(eval $(call addlib_s,libpcreglue,$(CONFIG_LIBPCRE)))
+
+################################################################################
+# Original sources
+################################################################################
+LIBPCRE_VERSION=8.43
+LIBPCRE_URL=https://ftp.pcre.org/pub/pcre/pcre-$(LIBPCRE_VERSION).zip
+LIBPCRE_PATCHDIR=$(LIBPCRE_BASE)/patches
+LIBPCRE_SUBDIR=pcre-$(LIBPCRE_VERSION)
+$(eval $(call fetch,libpcre,$(LIBPCRE_URL)))
+$(eval $(call patch,libpcre,$(LIBPCRE_PATCHDIR),$(LIBPCRE_SUBDIR)))
+
+################################################################################
+# Helpers
+################################################################################
+LIBPCRE_EXTRACTED = $(LIBPCRE_ORIGIN)/pcre-$(LIBPCRE_VERSION)
+
+################################################################################
+# Library includes
+################################################################################
+LIBPCRE_COMMON_INCLUDES-y     += -I$(LIBPCRE_BASE)/include
+LIBPCRE_COMMON_INCLUDES-y     += -I$(LIBPCRE_EXTRACTED)
+CINCLUDES-$(CONFIG_LIBPCRE)   += $(LIBPCRE_COMMON_INCLUDES-y)
+CXXINCLUDES-$(CONFIG_LIBPCRE) += $(LIBPCRE_COMMON_INCLUDES-y)
+
+LIBPCRE_CINCLUDES   += -I$(LIBPCRE_EXTRACTED)
+LIBPCRE_CXXINCLUDES += -I$(LIBPCRE_EXTRACTED)
+
+################################################################################
+# Global flags
+################################################################################
+# Suppress flags
+LIBPCRE_SUPPRESS_FLAGS += -Wno-unused-parameter \
+	-Wno-unused-variable -Wno-unused-value -Wno-unused-function \
+	-Wno-missing-field-initializers -Wno-implicit-fallthrough
+LIBPCRE_CFLAGS-y   += $(LIBPCRE_SUPPRESS_FLAGS) \
+	-Wno-pointer-to-int-cast -Wno-int-to-pointer-cast
+LIBPCRE_CXXFLAGS-y += $(LIBPCRE_SUPPRESS_FLAGS)
+
+# Preprocessing symbols
+LIBPCRE_DEFINES    += -DHAVE_CONFIG_H
+LIBPCRE_CFLAGS-y   += $(LIBPCRE_DEFINES)
+LIBPCRE_CXXFLAGS-y += $(LIBPCRE_DEFINES)
+
+################################################################################
+# OS dependencies code - Glue between Unikraft and pcre
+################################################################################
+#LIBPCREGLUE_SRCS-y += $(LIBPCRE_BASE)/sample.c|glue
+
+################################################################################
+# PCRE code
+################################################################################
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_byte_order.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_compile.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_config.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_dfa_exec.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_exec.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_fullinfo.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_get.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_globals.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_jit_compile.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_maketables.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_newline.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_ord2utf8.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_refcount.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_string_utils.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_study.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_tables.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_ucd.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_valid_utf8.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_version.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_xclass.c
+LIBPCRE_SRCS-y += $(LIBPCRE_EXTRACTED)/pcre_chartables.c
+
+################################################################################
+# PCRE prepare
+################################################################################
+# Run ./configure
+$(LIBPCRE_EXTRACTED)/config.status: $(LIBPCRE_BUILD)/.origin
+	$(call verbose_cmd,CONFIG,libpcre: $(notdir $@), \
+		cd $(LIBPCRE_EXTRACTED) && ./configure --disable-cpp)
+
+# Create pcre_chartables.c symlink
+$(LIBPCRE_EXTRACTED)/pcre_chartables.c: $(LIBPCRE_EXTRACTED)/config.status
+	$(call verbose_cmd,LINK,libpcre: $(notdir $@), \
+		cd $(LIBPCRE_EXTRACTED) && ln -s pcre_chartables.c.dist $@)
+
+LIBPCRE_PREPARED_DEPS = \
+	$(LIBPCRE_EXTRACTED)/config.status \
+	$(LIBPCRE_EXTRACTED)/pcre_chartables.c \
+
+$(LIBPCRE_BUILD)/.prepared: $(LIBPCRE_PREPARED_DEPS)
+
+UK_PREPARE += $(LIBPCRE_BUILD)/.prepared
+

@@ -1,0 +1,9 @@
+config LIBPCRE
+	bool "pcre - Perl-compatible Regular Expressions"
+	default n
+	select LIBNOLIBC if !HAVE_LIBC
+	select LIBUKDEBUG
+	select LIBUKALLOC
+
+if LIBPCRE
+endif

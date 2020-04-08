@@ -1,0 +1,12 @@
+menuconfig LIBLUA
+	bool "The Lua programming language"
+	default n
+        select LIBNEWLIBC
+        select LIBUKTIME
+        select UKUNISTD
+
+if LIBLUA
+   config LIBLUA_MAIN_FUNCTION
+       bool "Provide main function"
+       default y
+endif
