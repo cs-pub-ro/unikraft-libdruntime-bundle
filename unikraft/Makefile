@@ -262,6 +262,10 @@ GOCFLAGS :=
 GOCFLAGS-y :=
 GOCINCLUDES :=
 GOCINCLUDES-y :=
+DMDFLAGS :=
+DMDFLAGS-y :=
+DMDINCLUDES :=
+DMDINCLUDES-y :=
 LDFLAGS :=
 LDFLAGS-y :=
 IMAGE_LDFLAGS :=
@@ -482,6 +486,7 @@ CC		:= $(CONFIG_CROSS_COMPILE)gcc
 CPP		:= $(CC)
 CXX		:= $(CPP)
 GOC		:= $(CONFIG_CROSS_COMPILE)gccgo-7
+DMD     := $(CONFIG_CROSS_COMPILE)dmd
 AS		:= $(CC)
 AR		:= $(CONFIG_CROSS_COMPILE)gcc-ar
 NM		:= $(CONFIG_CROSS_COMPILE)gcc-nm
@@ -527,7 +532,7 @@ ASINCLUDES            += -I$(UK_GENERATED_INCLUDES)
 CINCLUDES             += -I$(UK_GENERATED_INCLUDES)
 CXXINCLUDES           += -I$(UK_GENERATED_INCLUDES)
 GOCINCLUDES           += -I$(UK_GENERATED_INCLUDES)
-
+DMDINCLUDES			  += -I$(UK_GENERATED_INCLUDES)
 ################################################################################
 # Build rules
 ################################################################################

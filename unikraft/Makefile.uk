@@ -22,6 +22,8 @@ GOCFLAGS    += -fno-stack-protector -fno-omit-frame-pointer -fno-tree-sra
 GOCFLAGS    += -fno-split-stack -Wall -Wextra
 GOCINCLUDES += -nostdinc -nostdlib -I$(CONFIG_UK_BASE)/include
 
+DMDINCLUDES += -I$(CONFIG_UK_BASE)/include
+
 # Set the text and data sections to be readable and writable. Also,
 # do not page-align the data segment. If the output format supports
 # Unix style magic numbers, mark the output as OMAGIC.
