@@ -106,7 +106,7 @@ LIBDRUNTIME_GDCFLAGS-y +=
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/x86/switchcontext.S
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/common/threadasm.S
 
-#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/port_cstubs.c
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_BASE)/port_cstubs.c
 
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/object.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/math.d
