@@ -1,0 +1,9 @@
+config LIBDRUNTIME
+	bool "druntime"
+	default n
+	select LIBNOLIBC if !HAVE_LIBC
+	select LIBUKDEBUG
+	select LIBUKALLOC
+
+if LIBDRUNTIME
+endif

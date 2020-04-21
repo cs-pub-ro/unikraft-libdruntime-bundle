@@ -1,0 +1,352 @@
+#  SPDX-License-Identifier: BSD-3-Clause
+#
+#  druntime Makefile.uk
+#
+#  Authors: Marius-Cristian Baciu <marius.baciu@stud.acs.upb.ro>
+#
+#  Copyright (c) 2020, University Politehnica of Bucharest. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#
+#  1. Redistributions of source code must retain the above copyright
+#	 notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#	 notice, this list of conditions and the following disclaimer in the
+#	 documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its
+#	 contributors may be used to endorse or promote products derived from
+#	 this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
+#
+
+################################################################################
+# Library registration
+################################################################################
+$(eval $(call addlib_s,libdruntime,$(CONFIG_LIBDRUNTIME)))
+$(eval $(call addlib_s,libdruntimeglue,$(CONFIG_LIBDRUNTIME)))
+
+################################################################################
+# Original sources
+################################################################################
+LIBDRUNTIME_VERSION=9.3.0
+
+LIBDRUNTIME_URL=https://ftp.gnu.org/gnu/gcc/gcc-$(LIBGCC_VERSION)/gcc-$(LIBGCC_VERSION).tar.gz
+
+LIBDRUNTIME_PATCHDIR=$(LIBDRUNTIME_BASE)/patches
+LIBDRUNTIME_SUBDIR=gcc-$(LIBDRUNTIME_VERSION)
+
+# For now, we will be working with manually-copied sources, so they can be more
+# easily managed
+#$(eval $(call fetch,libdruntime,$(LIBDRUNTIME_URL)))
+
+#$(eval $(call patch,libdruntime,$(LIBDRUNTIME_PATCHDIR),$(LIBDRUNTIME_SUBDIR)))
+
+################################################################################
+# Helpers
+################################################################################
+# This variable will be automatically set during the fetch routine call. For now,
+# hard-coding it should work
+LIBDRUNTIME_ORIGIN = /home/me/Faculty_work/Diploma/unikraft_fork/apps/app-helloworld/build/libdruntime/origin
+LIBDRUNTIME_EXTRACTED = $(LIBDRUNTIME_ORIGIN)/druntime
+################################################################################
+# Library includes
+################################################################################
+LIBDRUNTIME_COMMON_INCLUDES-y = -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime #\
+# The following are includes used in the Go port. It is worth analyzing whether their
+# motivation also applies here
+#	-I$(LIBDRUNTIME_EXTRACTED)/libffi/include \
+#	-I$(LIBDRUNTIME_EXTRACTED)/libgcc \
+#	-I$(LIBDRUNTIME_EXTRACTED)/gcc/include \
+#	-I$(LIBDRUNTIME_EXTRACTED)/gcc/
+#LIBDRUNTIME_COMMON_INCLUDES-$(CONFIG_ARCH_X86_64) += -I$(LIBDRUNTIME_EXTRACTED)/libffi/src/x86
+#LIBDRUNTIME_COMMON_INCLUDES-$(CONFIG_ARCH_X86_64) += -I$(LIBDRUNTIME_EXTRACTED)/gcc/config/i386
+LIBDRUNTIME_ASINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
+LIBDRUNTIME_CINCLUDES-y  = $(LIBDRUNTIME_COMMON_INCLUDES-y)
+
+LIBDRUNTIME_INCLUDES-y	+= $(LIBDRUNTIME_COMMON_INCLUDES-y)
+
+LIBDRUNTIME_GDCINCLUDES	+= $(LIBDRUNTIME_INCLUDES-y)
+
+
+################################################################################
+# Global flags
+################################################################################
+# Suppress flags
+LIBDRUNTIME_SUPPRESS_FLAGS += -Wno-cast-qual -Wno-unused-value -Wno-unused-parameter
+
+LIBDRUNTIME_CFLAGS-y   += $(LIBDRUNTIME_SUPPRESS_FLAGS)
+LIBDRUNTIME_CFLAGS-y   += -fexceptions -fnon-call-exceptions \
+	-fplan9-extensions -fno-split-stack -Wall -Wextra -Wwrite-strings \
+	-Wcast-qual -Wno-unused-function -minline-all-stringops \
+	-Wno-implicit-function-declaration -D_GNU_SOURCE -D_LARGEFILE_SOURCE \
+	-D_FILE_OFFSET_BITS=64
+
+# Here you may add any version symbols, as needed
+LIBDRUNTIME_GDCFLAGS +=
+LIBDRUNTIME_GDCFLAGS-y +=
+
+################################################################################
+# druntime code
+################################################################################
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/x86/switchcontext.S
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/common/threadasm.S
+
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/port_cstubs.c
+
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/object.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/math.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/demangle.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/atomic.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/attribute.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/bitop.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/runtime.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/vararg.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/memory.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/simd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/time.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/cpuid.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/checkedint.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/exception.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/thread.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/arrayop.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/string.d|internal
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/abort.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/spinlock.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/traits.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/hash.d|internal
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/convert.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/math.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/tgmath.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/errno.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/wchar_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/stddef.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/signal.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/locale.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/time.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/stdlib.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/stdio.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/wctype.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/inttypes.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/string.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/stdint.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/ctype.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/float_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/limits.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/complex.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/stdarg.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/assert_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/config.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/fenv.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/errno_.c
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdcpp/exception.d|stdcpp
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdcpp/typeinfo.d|stdcpp
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/semaphore.d|sync
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/mutex.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/barrier.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/condition.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/rwmutex.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/exception.d|sync
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sync/config.d|sync
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/semaphore.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/syslog.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/fcntl.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/iconv.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/mqueue.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/libgen.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/arpa/inet.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/ucontext.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/netdb.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/utime.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sched.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/signal.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/time.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/netinet/in_.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/netinet/tcp.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/net/if_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/unistd.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/stdlib.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/stdio.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/ttycom.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/resource.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/ioctl.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/filio.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/ioccom.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/stat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/time.d|posix_sys
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/types.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/un.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/mman.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/statvfs.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/socket.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/utsname.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/ipc.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/wait.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/msg.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/uio.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/select.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/shm.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/inttypes.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/dirent.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/setjmp.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/aio.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/pwd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/pthread.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/poll.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/dlfcn.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/grp.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/termios.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/config.d|posix
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/fcntl.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/epoll.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/errno.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sched.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/tipc.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/elf.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/timerfd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/time.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/netinet/in_.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/netinet/tcp.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/unistd.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/stdio.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/xattr.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/eventfd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/prctl.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/file.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/time.d|linux_sys
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/netinet/tcp.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/mman.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/signalfd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/inotify.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/socket.d|sys
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/sysinfo.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/auxv.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/ifaddrs.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/dlfcn.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/termios.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/config.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/execinfo.d|linux
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/link.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/bionic/fcntl.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/bionic/unistd.d|bionic
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/semaphore.d|mach
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/kern_return.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/getsect.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/loader.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/dyld.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/port.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/thread_act.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/netinet/in_.d|darwin
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/event.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/cdefs.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/mman.d|darwin
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/pthread.d|darwin
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/dlfcn.d|darwin
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/execinfo.d|darwin
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/attribute.d|gcc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/package.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/arm_common.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/generic.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/pe.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/c6x.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/arm.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/sections/elf_shared.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/sections/package.d|sections
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/builtins.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/backtrace.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/deh.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/drtstuff.c
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/emutls.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/gthread.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d|gcc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/os.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/proxy.d|gc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/impl/conservative/gc.d|conservative
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/impl/manual/gc.d|manual
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/gcinterface.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/pooltable.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/bits.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/config.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcstub/gc.d|gcstub
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/adi.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ushort.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_long.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_wchar.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_cfloat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ulong.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Along.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_char.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Acfloat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_dchar.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_cent.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Acdouble.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_short.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Ag.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Acreal.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ifloat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Ashort.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_creal.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_C.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Aint.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_byte.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ptr.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Afloat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_delegate.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_int.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ubyte.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ireal.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_idouble.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_n.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Areal.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_Adouble.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_uint.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_real.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_double.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_ucent.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_float.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_void.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/typeinfo/ti_cdouble.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/tlsgc.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/invariant.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/memory.d|rt
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/aApplyR.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/obj.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/aaA.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/array.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/container/treap.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/container/array.d|container
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/container/hashtab.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/container/common.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/typeinfo.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/random.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/util/utf.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/minfo.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/arrayassign.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/arraycast.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/critical_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/lifetime.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/deh.d|rt
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/dmain2.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/cast_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/sections.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/switch_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/config.d|rt
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/arraycat.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/aApply.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/monitor_.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/dylib_fixes.c
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/qsort.d
