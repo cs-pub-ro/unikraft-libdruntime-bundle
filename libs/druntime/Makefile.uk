@@ -59,9 +59,10 @@ LIBDRUNTIME_SUBDIR=gcc-$(LIBDRUNTIME_VERSION)
 ################################################################################
 # Helpers
 ################################################################################
-# This variable will be automatically set during the fetch routine call. For now,
-# hard-coding it should work
-LIBDRUNTIME_ORIGIN = /home/me/Faculty_work/Diploma/unikraft_fork/apps/app-helloworld/build/libdruntime/origin
+# LIBDRUNTIME_ORIGIN variable will be automatically set during the fetch routine call.
+# For now, we'll use a relative-to-cwd path.
+CWD_ = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+LIBDRUNTIME_ORIGIN = $(CWD_)/../apps/helloworld/build/libdruntime/origin
 LIBDRUNTIME_EXTRACTED = $(LIBDRUNTIME_ORIGIN)/druntime
 ################################################################################
 # Library includes
