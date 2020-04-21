@@ -39,7 +39,7 @@
 #include <uk/assert.h>
 #include <uk/bitops.h>
 #include <uk/asm.h>
-#include <irq.h>
+#include <uk/plat/common/irq.h>
 #include <kvm/irq.h>
 #include <uk/plat/lcpu.h>
 #include <arm/cpu.h>
@@ -291,7 +291,7 @@ void gic_set_irq_type(uint32_t irq, int trigger)
 	write_gicd32(GICD_ICFGR(irq), val);
 }
 
-uint32_t gic_irq_translate(uint32_t type, uint32_t hw_irq)
+int32_t gic_irq_translate(uint32_t type, uint32_t hw_irq)
 {
 	uint32_t irq;
 

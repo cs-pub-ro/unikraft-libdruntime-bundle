@@ -1,7 +1,7 @@
 menuconfig PLAT_KVM
        bool "KVM guest"
        default n
-       depends on (ARCH_X86_64 || ARCH_ARM_64)
+       depends on (ARCH_X86_64 || (ARCH_ARM_64 && !HAVE_SYSCALL))
        select LIBUKDEBUG
        select LIBUKALLOC
        select LIBUKTIMECONV
@@ -65,6 +65,7 @@ config VIRTIO_BUS
 menu "Virtio"
 config VIRTIO_PCI
        bool "Virtio PCI device support"
+       default y if (VIRTIO_NET || VIRTIO_9P)
        default n
        depends on KVM_PCI
        select VIRTIO_BUS
@@ -73,8 +74,10 @@ config VIRTIO_PCI
 
 config VIRTIO_NET
        bool "Virtio Net device"
+       default y if LIBUKNETDEV
        default n
        depends on LIBUKNETDEV
+       imply VIRTIO_PCI if ARCH_X86_64
        select VIRTIO_BUS
        select LIBUKSGLIST
        help
@@ -82,8 +85,10 @@ config VIRTIO_NET
 
 config VIRTIO_9P
        bool "Virtio 9P device"
+       default y if LIBUK9P
        default n
        depends on LIBUK9P
+       imply VIRTIO_PCI if ARCH_X86_64
        select VIRTIO_BUS
        select LIBUKSGLIST
        help

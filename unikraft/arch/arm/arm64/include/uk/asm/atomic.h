@@ -38,33 +38,48 @@
 #endif
 
 /**
+ * ukarch_ffs - find first (lowest) set bit in word.
+ * @word: The word to search
+ *
+ * Returns one plus the index of the least significant 1-bit of x, or
+ * if x is zero, returns zero.
+ * ffs(1)=0, ffs(0x8000000)=31
+ */
+static inline unsigned int ukarch_ffs(unsigned int x)
+{
+	return __builtin_ffs(x) - 1;
+}
+
+/**
+ * ukarch_fls - find last (highest) set bit in word.
+ * @word: The word to search
+ *
+ * Undefined if no bit exists, so code should check against 0 first.
+ * fls(1)=0, fls(0x8000000)=31
+ */
+static inline unsigned int ukarch_fls(unsigned int x)
+{
+	return sizeof(x) * 8 - __builtin_clz(x) - 1;
+}
+
+/**
  * ukarch_ffsl - find first (lowest) set bit in word.
  * @word: The word to search
  *
  * Undefined if no bit exists, so code should check against 0 first.
  */
-static inline unsigned long ukarch_ffsl(unsigned long word)
+static inline unsigned long ukarch_ffsl(unsigned long x)
 {
-	int clz;
+	return __builtin_ffsl(x) - 1;
+}
 
-	/* xxxxx10000 = word
-	 * xxxxx01111 = word - 1
-	 * 0000011111 = word ^ (word - 1)
-	 *      4     = 63 - clz(word ^ (word - 1))
-	 */
-
-	__asm__("sub x0, %[word], #1\n"
-		"eor x0, x0, %[word]\n"
-		"clz %[clz], x0\n"
-		:
-		/* Outputs: */
-		[clz] "=r"(clz)
-		:
-		/* Inputs: */
-		[word] "r"(word)
-		:
-		/* Clobbers: */
-		"x0");
-
-	return 63 - clz;
+/**
+ * ukarch_flsl - find last (highest) set bit in word.
+ * @word: The word to search
+ *
+ * Undefined if no bit exists, so code should check against 0 first.
+ */
+static inline unsigned long ukarch_flsl(unsigned long x)
+{
+	return sizeof(x) * 8 - __builtin_clzl(x) - 1;
 }

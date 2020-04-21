@@ -28,7 +28,7 @@
 #define _ARCH_MM_H_
 
 #include <stdint.h>
-#include <sections.h>
+#include <uk/plat/common/sections.h>
 #include <uk/arch/limits.h>
 
 typedef uint64_t paddr_t;
@@ -55,5 +55,7 @@ extern uint32_t _libxenplat_paddr_offset;
 #define pfn_to_virt(_pfn)      (to_virt(PFN_PHYS(_pfn)))
 
 #define virtual_to_mfn(_virt)  virt_to_mfn(_virt)
+
+#define arch_mm_init(a)
 
 #endif

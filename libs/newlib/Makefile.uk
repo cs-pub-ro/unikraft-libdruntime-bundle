@@ -68,6 +68,7 @@ LIBNEWLIB_LIBM = $(LIBNEWLIBC_ORIGIN)/$(LIBNEWLIB_SUBDIR)/newlib/libm
 LIBNEWLIBC_COMMON_INCLUDES-y     += -I$(LIBNEWLIBC_BASE)/include
 LIBNEWLIBC_COMMON_INCLUDES-y     += -I$(LIBNEWLIBC_BASE)/musl-imported/include
 LIBNEWLIBC_COMMON_INCLUDES-y     += -I$(LIBNEWLIBC_BASE)/musl-imported/arch/generic
+LIBNEWLIBGLUE_CINCLUDES-y        += -I$(LIBNEWLIBC_BASE)/musl-imported/src/include
 LIBNEWLIBC_COMMON_INCLUDES-$(CONFIG_ARCH_X86_64) += -I$(LIBNEWLIBC_BASE)/musl-imported/arch/x86_64
 LIBNEWLIBC_COMMON_INCLUDES-y     += -I$(LIBNEWLIB_LIBC)/include
 
@@ -84,14 +85,22 @@ LIBNEWLIB_GLOBAL_FLAGS-y  += -DMISSING_SYSCALL_NAMES -DMALLOC_PROVIDED
 LIBNEWLIB_GLOBAL_FLAGS-y  += -D_POSIX_REALTIME_SIGNALS
 LIBNEWLIB_GLOBAL_FLAGS-$(CONFIG_LIBNEWLIBC_WANT_IO_C99_FORMATS) += -D_WANT_IO_C99_FORMATS
 LIBNEWLIB_GLOBAL_FLAGS-$(CONFIG_LIBNEWLIBC_LINUX_ERRNO_EXTENSIONS) += -D__LINUX_ERRNO_EXTENSIONS__
+ifeq ($(CONFIG_ARCH_ARM_64),y)
+LIBNEWLIB_GLOBAL_FLAGS-y  += -D_LDBL_EQ_DBL
+LIBNEWLIB_GLOBAL_FLAGS-y  += -D_HAVE_LONG_DOUBLE
+endif
+ifeq ($(CONFIG_ARCH_X86_64),y)
+LIBNEWLIB_GLOBAL_FLAGS-y  += -D_LDBL_EQ_DBL
+LIBNEWLIB_GLOBAL_FLAGS-y  += -D_HAVE_LONG_DOUBLE
+endif
 
-CFLAGS-y   += $(LIBNEWLIB_GLOBAL_FLAGS-y)
-CXXFLAGS-y += $(LIBNEWLIB_GLOBAL_FLAGS-y)
+CFLAGS-$(CONFIG_LIBNEWLIBC)   += $(LIBNEWLIB_GLOBAL_FLAGS-y)
+CXXFLAGS-$(CONFIG_LIBNEWLIBC) += $(LIBNEWLIB_GLOBAL_FLAGS-y)
 
 # Suppress some warnings to make the build process look neater
 LIBNEWLIB_SUPPRESS_FLAGS-y += \
 -Wno-unused-parameter -Wno-unused-variable -Wno-nonnull				\
--Wno-unused-but-set-variable -Wno-unused-label -Wno-char-subscripts		\
+-Wno-unused-but-set-variable -Wno-unused-label 					\
 -Wno-unused-function -Wno-missing-field-initializers -Wno-uninitialized		\
 -Wno-array-bounds -Wno-maybe-uninitialized -Wno-pointer-sign -Wno-unused-value	\
 -Wno-unused-macros -Wno-parentheses -Wno-implicit-function-declaration		\
@@ -101,14 +110,20 @@ LIBNEWLIB_SUPPRESS_FLAGS-$(call gcc_version_ge,6,0) += -Wno-misleading-indentati
 LIBNEWLIB_SUPPRESS_FLAGS-$(call gcc_version_ge,6,0) += -Wno-shift-negative-value
 LIBNEWLIB_SUPPRESS_FLAGS-$(call gcc_version_ge,7,0) += -Wno-implicit-fallthrough
 
-LIBNEWLIBC_CFLAGS-y   += $(LIBNEWLIB_SUPPRESS_FLAGS-y)
-LIBNEWLIBM_CFLAGS-y   += $(LIBNEWLIB_SUPPRESS_FLAGS-y)
-LIBNEWLIBC_CXXFLAGS-y += $(LIBNEWLIB_SUPPRESS_FLAGS-y)
-LIBNEWLIBM_CXXFLAGS-y += $(LIBNEWLIB_SUPPRESS_FLAGS-y)
+LIBNEWLIB_NO_BUILTINS		+= -D__NO_SYSCALLS__ -fno-builtin
+
+LIBNEWLIBC_CFLAGS-y   += $(LIBNEWLIB_SUPPRESS_FLAGS-y) $(LIBNEWLIB_NO_BUILTINS)
+LIBNEWLIBM_CFLAGS-y   += $(LIBNEWLIB_SUPPRESS_FLAGS-y) $(LIBNEWLIB_NO_BUILTINS)
+LIBNEWLIBC_CXXFLAGS-y += $(LIBNEWLIB_SUPPRESS_FLAGS-y) $(LIBNEWLIB_NO_BUILTINS)
+LIBNEWLIBM_CXXFLAGS-y += $(LIBNEWLIB_SUPPRESS_FLAGS-y) $(LIBNEWLIB_NO_BUILTINS)
 
 LIBNEWLIBGLUE_SUPPRESS_FLAGS-y += -Wno-unused-parameter
 LIBNEWLIBGLUE_CFLAGS-y   += $(LIBNEWLIBGLUE_SUPPRESS_FLAGS-y)
 LIBNEWLIBGLUE_CXXFLAGS-y += $(LIBNEWLIBGLUE_SUPPRESS_FLAGS-y)
+
+LIBNEWLIB_GLOBAL_SUPPRESS_FLAGS-y += -Wno-char-subscripts
+CFLAGS-$(CONFIG_LIBNEWLIBC)   += $(LIBNEWLIB_GLOBAL_SUPPRESS_FLAGS-y)
+CXXFLAGS-$(CONFIG_LIBNEWLIBC) += $(LIBNEWLIB_GLOBAL_SUPPRESS_FLAGS-y)
 
 ################################################################################
 # OS dependencies code - Glue between Unicore and newlib
@@ -117,18 +132,32 @@ LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/console.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/plat.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/file.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/mem.c
-LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/process.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/resource.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/pty.c
-LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/time.c|glue
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/locale.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/dev.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/signal.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/link.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/mntent.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/syscall.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/misc/syslog.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/termios/tcsetattr.c
 LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/termios/tcgetattr.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/math/sincosl.c
+
+ifeq ($(CONFIG_LIBNEWLIBC_CRYPT),y)
+LIBNEWLIBGLUE_CFLAGS-y   += -Wno-missing-braces -Wno-sign-compare -Wno-char-subscripts
+LIBNEWLIBGLUE_CFLAGS-y   += -Dhidden=
+
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_blowfish.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_des.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_md5.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_r.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_sha256.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/crypt_sha512.c
+LIBNEWLIBGLUE_SRCS-y += $(LIBNEWLIBC_BASE)/musl-imported/src/crypt/encrypt.c
+endif
 
 ################################################################################
 # Newlib/libc code -- argz
@@ -324,6 +353,7 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/misc/fini.c
 LIBNEWLIBC_COLLATE_INCLUDES += -I$(LIBNEWLIB_LIBC)/posix
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/collate.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/collcmp.c
+LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/glob.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/regcomp.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/regerror.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/posix/regexec.c
@@ -625,12 +655,11 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/reallocarray.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/reallocf.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/sb_charsets.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtod.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtodg.c|longdouble
-LIBNEWLIBC_STRTODG_LONGDOUBLE_FLAGS-y += -D_HAVE_LONG_DOUBLE
+LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtodg.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtoimax.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtol.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtorx.c|longdouble
-LIBNEWLIBC_STRTORX_LONGDOUBLE_FLAGS-y += -D_HAVE_LONG_DOUBLE
+LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtold.c
+LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtorx.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtoul.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtoumax.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/utoa.c
@@ -691,8 +720,6 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/wcrtomb.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/wcsnrtombs.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/wcsrtombs.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/wctob.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/stdlib/strtold.c|longdouble
-LIBNEWLIBC_STRTOLD_LONGDOUBLE_FLAGS-y += -D_HAVE_LONG_DOUBLE
 
 ################################################################################
 # Newlib/libc code -- string
@@ -716,10 +743,13 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/memmem.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/rindex.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcasecmp.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcat.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strchr.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcmp.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strchr.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strchr.S
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strcmp.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strcmp.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcoll.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcpy.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strcpy.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strcpy.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcspn.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strdup.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strdup_r.c
@@ -727,17 +757,21 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strerror.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strerror_r.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strlcat.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strlcpy.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strlen.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strlen.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strlen.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strlwr.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strncasecmp.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strncasecmp_l.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strncat.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strncmp.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strncmp.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strncmp.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strncpy.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strnlen.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strnlen.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strnlen.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strnstr.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strpbrk.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strrchr.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strrchr.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strrchr.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strsep.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strsignal.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strspn.c
@@ -780,15 +814,18 @@ LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/xpg_strerror_r.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/bcmp.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/memccpy.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/mempcpy.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/stpcpy.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/stpcpy.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/stpcpy.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/stpncpy.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strndup.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strcasestr.c
-LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strchrnul.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_X86_64) += $(LIBNEWLIB_LIBC)/string/strchrnul.c
+LIBNEWLIBC_SRCS-$(CONFIG_ARCH_ARM_64) += $(LIBNEWLIB_LIBC)/machine/aarch64/strchrnul.S
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/strndup_r.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/wcpcpy.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/wcpncpy.c
 LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/wcsdup.c
+LIBNEWLIBC_SRCS-y += $(LIBNEWLIB_LIBC)/string/wcscasecmp.c
 
 ################################################################################
 # Newlib/libc code -- syscalls
@@ -970,6 +1007,21 @@ LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/math/w_tgamma.c
 ################################################################################
 # Newlib/libm code -- common
 ################################################################################
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/llroundl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/logl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/expl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/ceill.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/floorl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/ldexpl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/frexpl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/powl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/cosl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/sinl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/atanl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/tanl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/fmodl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/sinhl.c
+LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/coshl.c
 LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/s_finite.c
 LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/s_copysign.c
 LIBNEWLIBM_SRCS-y += $(LIBNEWLIB_LIBM)/common/s_modf.c

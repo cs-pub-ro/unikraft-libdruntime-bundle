@@ -39,6 +39,7 @@
  * this file.
  */
 
+#include <uk/config.h>
 #include <uk/arch/types.h>
 
 #if (defined __NEED_NULL && !defined __DEFINED_NULL)
@@ -65,35 +66,8 @@ typedef __off off_t;
 #define __DEFINED_off_t
 #endif
 
-#if (defined __NEED_time_t && !defined __DEFINED_time_t)
-typedef long time_t;
-#define __DEFINED_time_t
-#endif
-
-#if (defined __NEED_suseconds_t && !defined __DEFINED_suseconds_t)
-typedef long suseconds_t;
-#define __DEFINED_suseconds_t
-#endif
-
-#if (defined __NEED_struct_timeval && !defined __DEFINED_struct_timeval)
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
-};
-#define __DEFINED_struct_timeval
-#endif
-
-#if (defined __NEED_struct_timespec && !defined __DEFINED_struct_timespec)
-struct timespec {
-	time_t tv_sec;
-	long   tv_nsec;
-};
-#define __DEFINED_struct_timespec
-#endif
-
-#if (defined __NEED_clockid_t && !defined __DEFINED_clockid_t)
-typedef int clockid_t;
-#define __DEFINED_clockid_t
+#if CONFIG_HAVE_TIME
+#include <uk/time_types.h>
 #endif
 
 #if (defined __NEED_mode_t && !defined __DEFINED_mode_t)
@@ -111,9 +85,19 @@ typedef unsigned gid_t;
 #define __DEFINED_gid_t
 #endif
 
+#if defined(__NEED_useconds_t) && !defined(__DEFINED_useconds_t)
+typedef unsigned useconds_t;
+#define __DEFINED_useconds_t
+#endif
+
 #if defined(__NEED_pid_t) && !defined(__DEFINED_pid_t)
 typedef int pid_t;
 #define __DEFINED_pid_t
+#endif
+
+#if defined(__NEED_id_t) && !defined(__DEFINED_id_t)
+typedef unsigned id_t;
+#define __DEFINED_id_t
 #endif
 
 #if defined(__NEED_dev_t) && !defined(__DEFINED_dev_t)
@@ -139,6 +123,11 @@ typedef __s64 blkcnt_t;
 #if defined(__NEED_blksize_t) && !defined(__DEFINED_blksize_t)
 typedef long blksize_t;
 #define __DEFINED_blksize_t
+#endif
+
+#if defined(__NEED_locale_t) && !defined(__DEFINED_locale_t)
+typedef struct __locale_struct *locale_t;
+#define __DEFINED_locale_t
 #endif
 
 #if defined(__NEED_struct_iovec) && !defined(__DEFINED_struct_iovec)

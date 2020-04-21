@@ -127,17 +127,32 @@ endef
 #
 ###############################################################################
 
+# Include a sub-makefile
+# verbose_include $path
+define verbose_include =
+$(call verbose_info,Including $(1)...)
+include $(1)
+endef
+
+# Try to include a sub-makefile
+# (does not fail if it does not exist)
+# verbose_include_try $path
+define verbose_include_try =
+$(call verbose_info,Trying to include $(1)...)
+-include $(1)
+endef
+
 # Import a library
 # For internally use only (Unikraft main makefile and internal libs Makefike.uk)
 # _import_library $path
 define _import_lib =
 _IMPORT_BASE := $(1)
-include $(1)/Makefile.uk
+$(call verbose_include,$(1)/Makefile.uk)
 undefine _IMPORT_BASE
 endef
 # _import_linker $plat_name
 define _import_linker =
- include $(UK_PLAT_$(call uc,$(1))_LINKER)
+$(call verbose_include,$(UK_PLAT_$(call uc,$(1))_LINKER))
 endef
 
 # Register a platform to the build system
@@ -703,7 +718,7 @@ endef
 # buildrule_olib $libname
 define buildrule_olib =
 $(if $(wildcard $($(call vprefix_lib,$(1),EXPORTS))),,\
-	$(warning Warning: Definition of exported symbols for $(1) missing: $($(call vprefix_lib,$(1),EXPORTS))) \
+	$(call verbose_info,Warning: Definition of exported symbols for $(1) missing: $($(call vprefix_lib,$(1),EXPORTS))) \
 )
 
 $(call libname2preolib,$(1)): $($(call vprefix_lib,$(1),OBJS)) \
@@ -721,9 +736,9 @@ $(call libname2preolib,$(1)): $($(call vprefix_lib,$(1),OBJS)) \
 		      $($(call vprefix_lib,$(1),OBJS)) \
 		      $($(call vprefix_lib,$(1),OBJS-y)) \
 		      -Wl$(comma)--start-group \
-              $($(call vprefix_lib,$(1),ALIBS)) \
+		      $($(call vprefix_lib,$(1),ALIBS)) \
 		      $($(call vprefix_lib,$(1),ALIBS-y)) \
-              -Wl$(comma)--end-group \
+		      -Wl$(comma)--end-group \
 		      -o $(call libname2preolib,$(1)))
 
 $(call libname2olib,$(1)): $(call libname2preolib,$(1)) $(if $(wildcard $($(call vprefix_lib,$(1),EXPORTS))),$($(call vprefix_lib,$(1),EXPORTS)),)

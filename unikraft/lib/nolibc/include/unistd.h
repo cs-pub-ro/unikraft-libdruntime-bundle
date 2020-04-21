@@ -46,15 +46,34 @@ extern "C" {
 #define __NEED_size_t
 #define __NEED_ssize_t
 #define __NEED_off_t
+#define __NEED_useconds_t
 
 /*
  * Sysconf name values
  */
+#define _SC_PAGESIZE 8
 #define _SC_NPROCESSORS_ONLN 10
 
 #include <nolibc-internal/shareddefs.h>
 
+#if CONFIG_HAVE_TIME
 unsigned int sleep(unsigned int seconds);
+#endif
+
+#if CONFIG_LIBPOSIX_PROCESS
+int execl(const char *path, const char *arg, ...
+		/* (char  *) NULL */);
+int execlp(const char *file, const char *arg, ...
+		/* (char  *) NULL */);
+int execle(const char *path, const char *arg, ...
+		/*, (char *) NULL, char * const envp[] */);
+int execv(const char *path, char *const argv[]);
+int execvp(const char *file, char *const argv[]);
+int execvpe(const char *file, char *const argv[],
+		char *const envp[]);
+int execve(const char *filename, char *const argv[],
+		char *const envp[]);
+#endif
 
 #if CONFIG_LIBVFSCORE
 int close(int fd);
@@ -68,6 +87,10 @@ int dup3(int oldfd, int newfd, int flags);
 int unlink(const char *pathname);
 off_t lseek(int fd, off_t offset, int whence);
 #endif
+
+#define STDIN_FILENO	0	/* standard input file descriptor */
+#define STDOUT_FILENO	1	/* standard output file descriptor */
+#define STDERR_FILENO	2	/* standard error file descriptor */
 
 #ifdef __cplusplus
 }

@@ -66,18 +66,6 @@ int	vfs_debug = VFSDB_FLAGS;
 
 static mode_t global_umask = S_IWGRP | S_IWOTH;
 
-/* TODO: these macro does not belong here
- * NOTE: borrowed from OSv
- */
-#define DO_ONCE(thing) do {				\
-	static int _x;					\
-	if (!_x) {					\
-	    _x = 1;					\
-	    thing ;					\
-	}						\
-} while (0)
-#define WARN_STUBBED() DO_ONCE(uk_pr_warn("%s() stubbed\n", __func__))
-
 static inline int libc_error(int err)
 {
     errno = err;
@@ -350,7 +338,7 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 
 LFS64(pread);
 
-ssize_t read(int fd, void *buf, size_t count)
+UK_SYSCALL_DEFINE(ssize_t, read, int, fd, void *, buf, size_t, count)
 {
 	return pread(fd, buf, count, -1);
 }
@@ -391,7 +379,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 
 LFS64(pwrite);
 
-ssize_t write(int fd, const void *buf, size_t count)
+UK_SYSCALL_DEFINE(ssize_t, write, int, fd, const void *, buf, size_t, count)
 {
 	return pwrite(fd, buf, count, -1);
 }
@@ -420,7 +408,8 @@ ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 
 LFS64(preadv);
 
-ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
+UK_SYSCALL_DEFINE(ssize_t, readv,
+		  int, fd, const struct iovec *, iov, int, iovcnt)
 {
 	return preadv(fd, iov, iovcnt, -1);
 }
@@ -456,13 +445,8 @@ ssize_t pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 }
 LFS64(pwritev);
 
-ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
-{
-	return pwritev(fd, iov, iovcnt, -1);
-}
-
-UK_SYSCALL_DEFINE(writev, unsigned long, fd, const struct iovec *, vec,
-		  unsigned long, vlen)
+UK_SYSCALL_DEFINE(ssize_t, writev,
+		  int, fd, const struct iovec *, vec, int, vlen)
 {
 	return pwritev(fd, vec, vlen, -1);
 }
@@ -569,7 +553,7 @@ int __fxstat(int ver __unused, int fd, struct stat *st)
 
 LFS64(__fxstat);
 
-int fstat(int fd __unused, struct stat *st)
+UK_SYSCALL_DEFINE(int, fstat, int, fd, struct stat *, st)
 {
 	return __fxstat(1, fd, st);
 }
@@ -579,10 +563,6 @@ LFS64(fstat);
 int __fxstatat(int ver __unused, int dirfd, const char *pathname, struct stat *st,
 		int flags)
 {
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		UK_CRASH("UNIMPLEMENTED: fstatat() with AT_SYMLINK_NOFOLLOW");
-	}
-
 	if (pathname[0] == '/' || dirfd == AT_FDCWD) {
 		return stat(pathname, st);
 	}
@@ -609,7 +589,10 @@ int __fxstatat(int ver __unused, int dirfd, const char *pathname, struct stat *s
 	strlcat(p, "/", PATH_MAX);
 	strlcat(p, pathname, PATH_MAX);
 
-	error = stat(p, st);
+	if (flags & AT_SYMLINK_NOFOLLOW)
+		error = lstat(p, st);
+	else
+		error = stat(p, st);
 
 	vn_unlock(vp);
 	fdrop(fp);
@@ -1392,7 +1375,7 @@ UK_TRACEPOINT(trace_vfs_dup3_err, "%d", int);
  */
 int dup3(int oldfd, int newfd, int flags)
 {
-	struct vfscore_file *fp;
+	struct vfscore_file *fp, *fp_new;
 	int error;
 
 	trace_vfs_dup3(oldfd, newfd, flags);
@@ -1411,6 +1394,18 @@ int dup3(int oldfd, int newfd, int flags)
 	}
 
 	error = fget(oldfd, &fp);
+	if (error)
+		goto out_errno;
+
+	error = fget(newfd, &fp_new);
+	if (error == 0) {
+		/* if newfd is open, then close it */
+		error = close(newfd);
+		if (error)
+			goto out_errno;
+	}
+
+	error = vfscore_reserve_fd(newfd);
 	if (error)
 		goto out_errno;
 
@@ -1453,7 +1448,9 @@ int fcntl(int fd, int cmd, ...)
 	va_list ap;
 	struct vfscore_file *fp;
 	int ret = 0, error;
+#if defined(FIONBIO) && defined(FIOASYNC)
 	int tmp;
+#endif
 
 	va_start(ap, cmd);
 	arg = va_arg(ap, int);
@@ -1706,7 +1703,7 @@ int ftruncate(int fd, off_t length)
 
 LFS64(ftruncate);
 
-ssize_t readlink(const char *pathname, char *buf, size_t bufsize)
+UK_SYSCALL_DEFINE(ssize_t, readlink, const char *, pathname, char *, buf, size_t, bufsize)
 {
 	struct task *t = main_task;
 	char path[PATH_MAX];
@@ -1766,7 +1763,15 @@ int fallocate(int fd, int mode, loff_t offset, loff_t len)
 
 LFS64(fallocate);
 
-#if 0
+UK_TRACEPOINT(trace_vfs_utimes, "\"%s\"", const char*);
+UK_TRACEPOINT(trace_vfs_utimes_ret, "");
+UK_TRACEPOINT(trace_vfs_utimes_err, "%d", int);
+
+int futimes(int fd, const struct timeval times[2])
+{
+    return futimesat(fd, NULL, times);
+}
+
 int futimesat(int dirfd, const char *pathname, const struct timeval times[2])
 {
 	struct stat st;
@@ -1826,9 +1831,11 @@ UK_TRACEPOINT(trace_vfs_utimensat_err, "%d", int);
 
 int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags)
 {
+	int error;
+
 	trace_vfs_utimensat(pathname);
 
-	auto error = sys_utimensat(dirfd, pathname, times, flags);
+	error = sys_utimensat(dirfd, pathname, times, flags);
 
 	if (error) {
 		trace_vfs_utimensat_err(error);
@@ -1893,6 +1900,7 @@ int lutimes(const char *pathname, const struct timeval times[2])
 	return do_utimes(pathname, times, AT_SYMLINK_NOFOLLOW);
 }
 
+#if 0
 int utime(const char *pathname, const struct utimbuf *t)
 {
 	using namespace std::chrono;
@@ -2059,6 +2067,23 @@ ssize_t sendfile(int out_fd, int in_fd, off_t *_offset, size_t count)
 LFS64(sendfile);
 #endif
 
+int posix_fadvise(int fd __unused, off_t offset __unused, off_t len __unused,
+		int advice)
+{
+	switch (advice) {
+	case POSIX_FADV_NORMAL:
+	case POSIX_FADV_SEQUENTIAL:
+	case POSIX_FADV_RANDOM:
+	case POSIX_FADV_NOREUSE:
+	case POSIX_FADV_WILLNEED:
+	case POSIX_FADV_DONTNEED:
+		return 0;
+	default:
+		return EINVAL;
+	}
+}
+LFS64(posix_fadvise);
+
 mode_t umask(mode_t newmask)
 {
 	return ukarch_exchange_n(&global_umask, newmask);
@@ -2088,4 +2113,4 @@ static void vfscore_init(void)
 	lookup_init();
 }
 
-UK_CTOR_FUNC(1, vfscore_init);
+UK_CTOR_PRIO(vfscore_init, 1);

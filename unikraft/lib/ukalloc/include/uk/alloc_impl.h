@@ -55,23 +55,42 @@ int uk_alloc_register(struct uk_alloc *a);
  * API functionality is actually implemented.
  */
 
-#if CONFIG_LIBUKALLOC_IFPAGES
 /* Functions that can be used by allocators that implement palloc(), pfree() only */
 void *uk_malloc_ifpages(struct uk_alloc *a, size_t size);
 void *uk_realloc_ifpages(struct uk_alloc *a, void *ptr, size_t size);
 int uk_posix_memalign_ifpages(struct uk_alloc *a, void **memptr,
 				size_t align, size_t size);
-void *uk_memalign_ifpages(struct uk_alloc *a, size_t align, size_t size);
 void uk_free_ifpages(struct uk_alloc *a, void *ptr);
-#endif /* CONFIG_LIBUKALLOC_IFPAGES */
 
-/* Functionality that is provided based on malloc() */
+/* Functionality that is provided based on malloc() and posix_memalign() */
 void *uk_calloc_compat(struct uk_alloc *a, size_t num, size_t len);
+void *uk_realloc_compat(struct uk_alloc *a, void *ptr, size_t size);
 void *uk_memalign_compat(struct uk_alloc *a, size_t align, size_t len);
+void *uk_palloc_compat(struct uk_alloc *a, unsigned long num_pages);
+void uk_pfree_compat(struct uk_alloc *a, void *ptr, unsigned long num_pages);
 
-#if CONFIG_LIBUKALLOC_IFPAGES
+/* Shortcut for doing a registration of an allocator that does not implement
+ * palloc() or pfree()
+ */
+#define uk_alloc_init_malloc(a, malloc_f, calloc_f, realloc_f, free_f,	\
+				posix_memalign_f, memalign_f, addmem_f) \
+	do {								\
+		(a)->malloc         = (malloc_f);			\
+		(a)->calloc         = (calloc_f);			\
+		(a)->realloc        = (realloc_f);			\
+		(a)->posix_memalign = (posix_memalign_f);		\
+		(a)->memalign       = (memalign_f);			\
+		(a)->free           = (free_f);				\
+		(a)->palloc         = uk_palloc_compat;			\
+		(a)->pfree          = uk_pfree_compat;			\
+		(a)->addmem         = (addmem_f);			\
+									\
+		uk_alloc_register((a));					\
+	} while (0)
+
 /* Shortcut for doing a registration of an allocator that only
- * implements palloc(), pfree(), addmem() */
+ * implements palloc(), pfree(), addmem()
+ */
 #define uk_alloc_init_palloc(a, palloc_func, pfree_func, addmem_func)	\
 	do {								\
 		(a)->malloc         = uk_malloc_ifpages;		\
@@ -86,7 +105,6 @@ void *uk_memalign_compat(struct uk_alloc *a, size_t align, size_t len);
 									\
 		uk_alloc_register((a));					\
 	} while (0)
-#endif /* CONFIG_LIBUKALLOC_IFPAGES */
 
 #ifdef __cplusplus
 }

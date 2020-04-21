@@ -39,24 +39,21 @@
 #include <uk/arch/types.h>
 #include <uk/plat/lcpu.h>
 #include <uk/config.h>
+#include <uk/plat/time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct uk_swrand {
-#ifdef CONFIG_LIBUKSWRAND_MWC
-        __u32 Q[4096];
-        __u32 c;
-        __u32 i;
-#endif
-};
+struct uk_swrand;
 
 extern struct uk_swrand uk_swrand_def;
 
-void uk_swrand_init_r(struct uk_swrand *r, __u32 seed);
+void uk_swrand_init_r(struct uk_swrand *r, unsigned int seedc,
+			const __u32 seedv[]);
 __u32 uk_swrand_randr_r(struct uk_swrand *r);
 
+__u32 uk_swrandr_gen_seed32(void);
 /* Uses the pre-initialized default generator  */
 /* TODO: Add assertion when we can test if we are in interrupt context */
 /* TODO: Revisit with multi-CPU support */

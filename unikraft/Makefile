@@ -64,6 +64,34 @@ space := $(empty) $(empty)
 # explictly throw away any output from 'cd' here.
 export CDPATH :=
 
+# To put more focus on warnings, be less verbose as default
+# Use 'make V=1' to see the full commands
+ifeq ("$(origin V)", "command line")
+  BUILD_VERBOSE = $(V)
+endif
+ifndef BUILD_VERBOSE
+  BUILD_VERBOSE = 0
+endif
+
+ifeq ($(KBUILD_VERBOSE),1)
+  Q =
+ifndef VERBOSE
+  VERBOSE = 1
+endif
+export VERBOSE
+else
+   Q = @
+endif
+
+# Helper that shows an `info` message only
+# when verbose mode is on
+# verbose_info $verbosemessage
+ifeq ($(BUILD_VERBOSE),1)
+verbose_info = $(info $(1))
+else
+verbose_info =
+endif
+
 # Use current directory as base
 CONFIG_UK_BASE ?= $(CURDIR)
 override CONFIG_UK_BASE := $(realpath $(CONFIG_UK_BASE))
@@ -137,6 +165,7 @@ ELIB_DIR := $(realpath $(patsubst %/,%,$(patsubst %.,%,$(ELIB_DIR))))
 # KConfig settings
 
 CONFIG_UK_PLAT        := $(CONFIG_UK_BASE)/plat/
+CONFIG_UK_LIB         := $(CONFIG_UK_BASE)/lib/
 CONFIG_DIR            := $(CONFIG_UK_APP)
 CONFIG_CONFIG_IN      := $(CONFIG_UK_BASE)/Config.uk
 CONFIG                := $(CONFIG_UK_BASE)/support/kconfig
@@ -151,8 +180,12 @@ KCONFIG_TRISTATE      := $(KCONFIG_DIR)/tristate.config
 KCONFIG_AUTOHEADER    := $(UK_GENERATED_INCLUDES)/uk/_config.h
 KCONFIG_APP_DIR       := $(CONFIG_UK_APP)
 KCONFIG_LIB_IN        := $(KCONFIG_DIR)/libs.uk
-KCONFIG_DEF_PLATS     := $(addprefix $(CONFIG_UK_PLAT),linuxu kvm xen)
-KCONFIG_LIB_DIR       := $(CONFIG_UK_BASE)/lib $(ELIB_DIR)
+KCONFIG_DEF_PLATS     := $(shell find $(CONFIG_UK_PLAT)/* -maxdepth 0 \
+			   -type d \( -path $(CONFIG_UK_PLAT)/common -o \
+			   -path $(CONFIG_UK_PLAT)/drivers \
+			   \) -prune -o  -type d -print)
+KCONFIG_LIB_DIR       := $(shell find $(CONFIG_UK_LIB)/* -maxdepth 0 -type d) \
+			 $(CONFIG_UK_BASE)/lib $(ELIB_DIR)
 KCONFIG_PLAT_DIR      := $(KCONFIG_DEF_PLATS) $(EPLAT_DIR) $(CONFIG_UK_PLAT)
 KCONFIG_PLAT_IN       := $(KCONFIG_DIR)/plat.uk
 
@@ -160,14 +193,15 @@ KCONFIG_PLAT_IN       := $(KCONFIG_DIR)/plat.uk
 SCRIPTS_DIR := $(CONFIG_UK_BASE)/support/scripts
 
 # # Set and export the version string
+$(call verbose_info,Including $(CONFIG_UK_BASE)/version.mk...)
 include $(CONFIG_UK_BASE)/version.mk
 
 # Compute the full local version string so packages can use it as-is
 # Need to export it, so it can be got from environment in children (eg. mconf)
 ifdef UK_EXTRAVERSION
-export UK_FULLVERSION := $(UK_VERSION).$(UK_SUBVERSION).$(UK_EXTRAVERSION)$(shell $(SCRIPTS_DIR)/gitsha1)
+export UK_FULLVERSION := $(UK_VERSION).$(UK_SUBVERSION).$(UK_EXTRAVERSION)$(shell cd $(CONFIG_UK_BASE); $(SCRIPTS_DIR)/gitsha1)
 else
-export UK_FULLVERSION := $(UK_VERSION).$(UK_SUBVERSION)$(shell $(SCRIPTS_DIR)/gitsha1)
+export UK_FULLVERSION := $(UK_VERSION).$(UK_SUBVERSION)$(shell cd $(CONFIG_UK_BASE); $(SCRIPTS_DIR)/gitsha1)
 endif
 
 # Default image name
@@ -184,25 +218,6 @@ noconfig_targets	:= ukconfig menuconfig nconfig gconfig xconfig config \
 			   release olddefconfig properclean distclean \
 			   scriptconfig iscriptconfig kmenuconfig guiconfig \
 			   dumpvarsconfig $(null_targets)
-
-# To put more focus on warnings, be less verbose as default
-# Use 'make V=1' to see the full commands
-ifeq ("$(origin V)", "command line")
-  BUILD_VERBOSE = $(V)
-endif
-ifndef BUILD_VERBOSE
-  BUILD_VERBOSE = 0
-endif
-
-ifeq ($(KBUILD_VERBOSE),1)
-  Q =
-ifndef VERBOSE
-  VERBOSE = 1
-endif
-export VERBOSE
-else
-   Q = @
-endif
 
 # we want bash as shell
 SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -270,6 +285,8 @@ GDCFLAGS :=
 GDCFLAGS-y :=
 GDCINCLUDES :=
 GDCINCLUDES-y :=
+DBGFLAGS :=
+DBGFLAGS-y :=
 LDFLAGS :=
 LDFLAGS-y :=
 IMAGE_LDFLAGS :=
@@ -278,6 +295,7 @@ IMAGE_LDFLAGS-y :=
 # Pull in the user's configuration file
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
 ifneq ("$(wildcard $(UK_CONFIG))","")
+$(call verbose_info,Including $(UK_CONFIG)...)
 -include $(UK_CONFIG)
 UK_HAVE_DOT_CONFIG := y
 endif
@@ -359,14 +377,16 @@ export HOSTCC_NOCCACHE HOSTCXX_NOCCACHE
 ################################################################################
 # Makefile helpers
 ################################################################################
+$(call verbose_info,Including $(CONFIG_UK_BASE)/support/build/Makefile.rules...)
+include $(CONFIG_UK_BASE)/support/build/Makefile.rules
+
 # We need to include this file early (before any rule is defined)
 # but after we have tried to load a .config and after having our tools defined
-$(foreach M,$(strip $(wildcard $(addsuffix Makefile.rules,\
-	   $(CONFIG_UK_BASE)/support/build/ $(CONFIG_UK_BASE)/lib/*/\
-	   $(CONFIG_UK_BASE)/plat/*/ $(addsuffix /,$(ELIB_DIR)) $(APP_DIR)/)\
-	      )),\
-		$(info Include $(M));\
-		$(eval include $(M)))
+$(foreach _M,$(wildcard $(addsuffix Makefile.rules,\
+	   $(CONFIG_UK_BASE)/lib/*/ $(CONFIG_UK_BASE)/plat/*/ \
+	   $(addsuffix /,$(ELIB_DIR)) $(APP_DIR)/)), \
+		$(eval $(call verbose_include,$(_M))) \
+)
 
 ################################################################################
 # Clean targets that do not have any dependency on a configuration
@@ -387,7 +407,7 @@ distclean: properclean
 # Unikraft Architecture
 ################################################################################
 # Set target archicture as set in config
-include $(CONFIG_UK_BASE)/arch/Arch.uk
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/arch/Arch.uk))
 ifeq ($(CONFIG_UK_ARCH),)
 # Set target archicture as set in environment
 ifneq ($(ARCH),)
@@ -482,7 +502,7 @@ ifneq ("$(origin CROSS_COMPILE)","undefined")
 CONFIG_CROSS_COMPILE := $(CROSS_COMPILE:"%"=%)
 endif
 
-include $(CONFIG_UK_BASE)/arch/$(UK_FAMILY)/Compiler.uk
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/arch/$(UK_FAMILY)/Compiler.uk))
 
 # Make variables (CC, etc...)
 LD		:= $(CONFIG_CROSS_COMPILE)gcc
@@ -547,20 +567,24 @@ ifneq ($(CONFIG_UK_BASE),$(CONFIG_UK_APP))
 $(eval $(call _import_lib,$(CONFIG_UK_APP)));
 endif
 
+# internal libraries
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/lib/Makefile.uk))
+
 # external libraries
 $(foreach E,$(ELIB_DIR), \
 	$(eval $(call _import_lib,$(E))); \
 )
-$(eval $(call _import_lib,$(CONFIG_UK_BASE)/arch/$(UK_FAMILY))) # architecture libraries
-include $(CONFIG_UK_BASE)/plat/Makefile.uk # platform libraries
+# architecture library
+$(eval $(call _import_lib,$(CONFIG_UK_BASE)/arch/$(UK_FAMILY)))
+# internal platform libraries
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/plat/Makefile.uk))
 # external platform libraries
 # NOTE: We include them after internal platform libs so that also base variables
 #       provided with /plat/Makefile.uk are populated
 $(foreach E,$(EPLAT_DIR), \
 	$(eval $(call _import_lib,$(E))); \
 )
-include $(CONFIG_UK_BASE)/lib/Makefile.uk # libraries
-include $(CONFIG_UK_BASE)/Makefile.uk # Unikraft base
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/Makefile.uk)) # Unikraft base
 
 ifeq ($(call qstrip,$(UK_PLATS) $(UK_PLATS-y)),)
 $(warning You did not choose any target platform.)
@@ -577,10 +601,13 @@ endif
 endif
 
 # Generate build rules
-include $(CONFIG_UK_BASE)/support/build/Makefile.build
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/support/build/Makefile.build))
 
+# Include source dependencies
 ifneq ($(call qstrip,$(UK_DEPS) $(UK_DEPS-y)),)
--include $(UK_DEPS) $(UK_DEPS-y) # include header dependencies
+$(foreach _D,$(UK_DEPS) $(UK_DEPS-y),\
+ $(eval $(call verbose_include_try,$(_D))) \
+)
 endif
 
 # include Makefile for platform linking (`Linker.uk`)
@@ -607,7 +634,7 @@ images: $(UK_DEBUG_IMAGES) $(UK_DEBUG_IMAGES-y) $(UK_IMAGES) $(UK_IMAGES-y)
 
 GDB_HELPER_LINKS := $(addsuffix .gdb.py,$(UK_DEBUG_IMAGES) $(UK_DEBUG_IMAGES-y))
 $(GDB_HELPER_LINKS):
-	$(call verbose_cmd,LN,$(notdir $@), ln -sf uk-gdb.py $@)
+	$(call verbose_cmd,LN,$(notdir $@),$(HOSTLN) -sf uk-gdb.py $@)
 
 SCRIPTS_DIR_BACKSLASHED = $(subst /,\/,$(SCRIPTS_DIR))
 $(BUILD_DIR)/uk-gdb.py: $(SCRIPTS_DIR)/uk-gdb.py
@@ -621,7 +648,7 @@ all: images gdb_helpers
 # Cleanup rules
 ################################################################################
 # Generate cleaning rules
-include $(CONFIG_UK_BASE)/support/build/Makefile.clean
+$(eval $(call verbose_include,$(CONFIG_UK_BASE)/support/build/Makefile.clean))
 
 clean-libs: $(addprefix clean-,\
 	$(foreach P,$(UK_PLATS) $(UK_PLATS-y),\
@@ -676,7 +703,7 @@ KCONFIG_TOOLS := $(addprefix $(KCONFIG_DIR)/,$(KCONFIG_TOOLS))
 
 $(KCONFIG_TOOLS):
 	mkdir -p $(@D)/lxdialog
-	$(MAKE) CC="$(HOSTCC_NOCCACHE)" HOSTCC="$(HOSTCC_NOCCACHE)" \
+	$(MAKE) --no-print-directory CC="$(HOSTCC_NOCCACHE)" HOSTCC="$(HOSTCC_NOCCACHE)" \
 	    obj=$(@D) -C $(CONFIG) -f Makefile.br $(@)
 
 DEFCONFIG = $(call qstrip,$(UK_DEFCONFIG))
@@ -893,14 +920,14 @@ else #!($(sub_make_exec),)
 export sub_make_exec:=1
 
 $(BUILD_DIR)/Makefile:
-	ln -sn $(CONFIG_UK_BASE)/Makefile $(@)
+	$(call verbose_cmd,LN,$(notdir $@),$(HOSTLN) -sf $(CONFIG_UK_BASE)/Makefile $@)
 
 $(filter-out _all $(BUILD_DIR)/Makefile sub-make distclean properclean help $(lastword $(MAKEFILE_LIST)), \
   $(MAKECMDGOALS)) all: sub-make
 	@:
 
 sub-make: $(BUILD_DIR)/Makefile
-	$(Q)$(MAKE) CONFIG_UK_BASE=$(CONFIG_UK_BASE) -C $(BUILD_DIR) -f $(BUILD_DIR)/Makefile $(MAKECMDGOALS)
+	$(Q)$(MAKE) --no-print-directory CONFIG_UK_BASE=$(CONFIG_UK_BASE) -C $(BUILD_DIR) -f $(BUILD_DIR)/Makefile $(MAKECMDGOALS)
 
 endif
 

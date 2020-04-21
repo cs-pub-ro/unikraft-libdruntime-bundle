@@ -63,9 +63,6 @@
 #endif /* CONFIG_LIBUKLIBPARAM */
 
 int main(int argc, char *argv[]) __weak;
-#ifdef CONFIG_LIBLWIP
-extern int liblwip_init(void);
-#endif /* CONFIG_LIBLWIP */
 
 static void main_thread_func(void *arg) __noreturn;
 
@@ -79,32 +76,25 @@ static void main_thread_func(void *arg)
 	int i;
 	int ret;
 	struct thread_main_arg *tma = arg;
-	uk_init_t *itr;
+	uk_ctor_func_t *ctorfn;
+	uk_init_func_t *initfn;
 
 	/**
 	 * Run init table
 	 */
-	uk_pr_info("Init Table @ %p - %p\n", &uk_inittab_start[0],
-		   &uk_inittab_end);
-	uk_inittab_foreach(uk_inittab_start, uk_inittab_end, itr) {
-		ret = (*itr)();
+	uk_pr_info("Init Table @ %p - %p\n",
+		   &uk_inittab_start[0], &uk_inittab_end);
+	uk_inittab_foreach(initfn, uk_inittab_start, uk_inittab_end) {
+		UK_ASSERT(*initfn);
+		uk_pr_debug("Call init function: %p()...\n", *initfn);
+		ret = (*initfn)();
 		if (ret < 0) {
 			uk_pr_err("Init function at %p returned error %d\n",
-				  itr, ret);
+				  *initfn, ret);
 			ret = UKPLAT_CRASH;
 			goto exit;
 		}
 	}
-
-#ifdef CONFIG_LIBLWIP
-	/*
-	 * TODO: This is an initial implementation where we call the
-	 * initialization of lwip directly. We will remove this call
-	 * as soon as we introduced a more generic scheme for
-	 * (external) library initializations.
-	 */
-	liblwip_init();
-#endif /* CONFIG_LIBLWIP */
 
 #if CONFIG_LIBUKBOOT_BANNER
 	printf("Welcome to  _ __             _____\n");
@@ -113,6 +103,7 @@ static void main_thread_func(void *arg)
 	printf("\\_,_/_//_/_/_/\\_\\/_/  \\_,_/_/ \\__/\n");
 	printf("%35s\n",
 	       STRINGIFY(UK_CODENAME) " " STRINGIFY(UK_FULLVERSION));
+	fflush(stdout);
 #endif
 	/*
 	 * Application
@@ -124,25 +115,24 @@ static void main_thread_func(void *arg)
 	 * from its OS being initialized.
 	 */
 	uk_pr_info("Pre-init table at %p - %p\n",
-		   __preinit_array_start, &__preinit_array_end);
-	uk_ctor_foreach(__preinit_array_start, __preinit_array_end, i) {
-		if (__preinit_array_start[i]) {
-			uk_pr_debug("Call pre-init constructor (entry %d (%p): %p())...\n",
-				    i, &__preinit_array_start[i],
-				    __preinit_array_start[i]);
-			__preinit_array_start[i]();
-		}
+		   &__preinit_array_start[0], &__preinit_array_end);
+	uk_ctortab_foreach(ctorfn,
+			   __preinit_array_start, __preinit_array_end) {
+		if (!*ctorfn)
+			continue;
+
+		uk_pr_debug("Call pre-init constructor: %p()...\n", *ctorfn);
+		(*ctorfn)();
 	}
 
 	uk_pr_info("Constructor table at %p - %p\n",
-			__init_array_start, &__init_array_end);
-	uk_ctor_foreach(__init_array_start, __init_array_end, i) {
-		if (__init_array_start[i]) {
-			uk_pr_debug("Call constructor (entry %d (%p): %p())...\n",
-					i, &__init_array_start[i],
-					__init_array_start[i]);
-			__init_array_start[i]();
-		}
+		   &__init_array_start[0], &__init_array_end);
+	uk_ctortab_foreach(ctorfn, __init_array_start, __init_array_end) {
+		if (!*ctorfn)
+			continue;
+
+		uk_pr_debug("Call constructor: %p()...\n", *ctorfn);
+		(*ctorfn)();
 	}
 
 	uk_pr_info("Calling main(%d, [", tma->argc);
@@ -183,7 +173,6 @@ void ukplat_entry_argp(char *arg0, char *argb, __sz argb_len)
 void ukplat_entry(int argc, char *argv[])
 {
 	struct thread_main_arg tma;
-	int i;
 	int kern_args = 0;
 	int rc __maybe_unused = 0;
 #if CONFIG_LIBUKALLOC
@@ -196,11 +185,14 @@ void ukplat_entry(int argc, char *argv[])
 	struct uk_sched *s = NULL;
 	struct uk_thread *main_thread = NULL;
 #endif
+	uk_ctor_func_t *ctorfn;
 
-	uk_pr_info("Unikraft constructors table at %p\n", uk_ctortab);
-	uk_ctor_foreach(uk_ctortab, uk_ctortab_end, i) {
-		uk_pr_debug("Call constructor %p\n", uk_ctortab[i]);
-		uk_ctortab[i]();
+	uk_pr_info("Unikraft constructor table at %p - %p\n",
+		   &uk_ctortab_start[0], &uk_ctortab_end);
+	uk_ctortab_foreach(ctorfn, uk_ctortab_start, uk_ctortab_end) {
+		UK_ASSERT(*ctorfn);
+		uk_pr_debug("Call constructor: %p())...\n", *ctorfn);
+		(*ctorfn)();
 	}
 
 #ifdef CONFIG_LIBUKLIBPARAM

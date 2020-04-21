@@ -42,6 +42,32 @@
  */
 #define _POSIX_TIMERS 1
 #define _POSIX_MONOTONIC_CLOCK 1
-#include_next <time.h>
+
+#include <sys/reent.h>
+#include <xlocale.h>
+
+typedef struct __tzrule_struct
+{
+	char ch;
+	int m;
+	int n;
+	int d;
+	int s;
+	time_t change;
+	long offset; /* Match type of _timezone. */
+} __tzrule_type;
+
+typedef struct __tzinfo_struct
+{
+	int __tznorth;
+	int __tzyear;
+	__tzrule_type  __tzrule [2];
+} __tzinfo_type;
+
+__tzinfo_type *__gettzinfo(void);
+
+extern long _timezone;
+extern int _daylight;
+extern char *_tzname[2];
 
 #endif /* NEWLIBGLUE_TIME_H */

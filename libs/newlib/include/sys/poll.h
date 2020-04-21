@@ -80,7 +80,13 @@ struct pollfd {
 #define POLLHUP     0x010   /* file descriptor was "hung up" */
 #define POLLNVAL    0x020   /* requested events "invalid" */
 
+#endif /* !CONFIG_LWIP_SOCKET */
+
 int poll(struct pollfd _pfd[], nfds_t _nfds, int _timeout);
 
-#endif /* !CONFIG_LWIP_SOCKET */
+#ifdef _GNU_SOURCE
+int ppoll(struct pollfd *fds, nfds_t nfds,
+        const struct timespec *tmo_p, const sigset_t *sigmask);
+#endif
+
 #endif /* _POSIX_SYS_POLL_H_ */

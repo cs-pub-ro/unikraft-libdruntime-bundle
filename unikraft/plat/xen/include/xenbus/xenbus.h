@@ -49,6 +49,7 @@
  */
 typedef enum xenbus_dev_type {
 	xenbus_dev_none = 0,
+	xenbus_dev_vbd,
 	xenbus_dev_9pfs,
 } xenbus_dev_type_t;
 
@@ -77,8 +78,8 @@ UK_TAILQ_HEAD(xenbus_driver_list, struct xenbus_driver);
 
 #define _XENBUS_REGFNNAME(x, y)      x##y
 
-#define _XENBUS_REGISTER_CTOR(CTOR)  \
-	UK_CTOR_FUNC(1, CTOR)
+#define _XENBUS_REGISTER_CTOR(ctor)  \
+	UK_CTOR_PRIO(ctor, UK_PRIO_AFTER(UK_BUS_REGISTER_PRIO))
 
 #define _XENBUS_REGISTER_DRIVER(libname, b)				\
 	static void							\

@@ -50,6 +50,9 @@ struct uk_alloc;
 extern "C" {
 #endif
 
+#define uk_zalloc(a, size)  uk_calloc(a, 1, size)
+#define uk_do_zalloc(a, size) uk_do_calloc(a, 1, size)
+
 struct uk_alloc *uk_alloc_get_default(void);
 int uk_alloc_set_default(struct uk_alloc *a);
 
@@ -65,12 +68,10 @@ typedef void* (*uk_alloc_realloc_func_t)
 		(struct uk_alloc *a, void *ptr, size_t size);
 typedef void  (*uk_alloc_free_func_t)
 		(struct uk_alloc *a, void *ptr);
-#if CONFIG_LIBUKALLOC_IFPAGES
 typedef void* (*uk_alloc_palloc_func_t)
-		(struct uk_alloc *a, size_t order);
+		(struct uk_alloc *a, unsigned long num_pages);
 typedef void  (*uk_alloc_pfree_func_t)
-		(struct uk_alloc *a, void *ptr, size_t order);
-#endif
+		(struct uk_alloc *a, void *ptr, unsigned long num_pages);
 typedef int   (*uk_alloc_addmem_func_t)
 		(struct uk_alloc *a, void *base, size_t size);
 #if CONFIG_LIBUKALLOC_IFSTATS
@@ -87,11 +88,9 @@ struct uk_alloc {
 	uk_alloc_memalign_func_t memalign;
 	uk_alloc_free_func_t free;
 
-#if CONFIG_LIBUKALLOC_IFPAGES
 	/* page allocation interface */
 	uk_alloc_palloc_func_t palloc;
 	uk_alloc_pfree_func_t pfree;
-#endif
 #if CONFIG_LIBUKALLOC_IFSTATS
 	/* optional interface */
 	uk_alloc_availmem_func_t availmem;
@@ -110,6 +109,7 @@ static inline void *uk_do_malloc(struct uk_alloc *a, size_t size)
 	UK_ASSERT(a);
 	return a->malloc(a, size);
 }
+
 static inline void *uk_malloc(struct uk_alloc *a, size_t size)
 {
 	if (unlikely(!a)) {
@@ -125,6 +125,7 @@ static inline void *uk_do_calloc(struct uk_alloc *a,
 	UK_ASSERT(a);
 	return a->calloc(a, nmemb, size);
 }
+
 static inline void *uk_calloc(struct uk_alloc *a,
 			      size_t nmemb, size_t size)
 {
@@ -141,6 +142,7 @@ static inline void *uk_do_realloc(struct uk_alloc *a,
 	UK_ASSERT(a);
 	return a->realloc(a, ptr, size);
 }
+
 static inline void *uk_realloc(struct uk_alloc *a, void *ptr, size_t size)
 {
 	if (unlikely(!a)) {
@@ -156,6 +158,7 @@ static inline int uk_do_posix_memalign(struct uk_alloc *a, void **memptr,
 	UK_ASSERT(a);
 	return a->posix_memalign(a, memptr, align, size);
 }
+
 static inline int uk_posix_memalign(struct uk_alloc *a, void **memptr,
 				    size_t align, size_t size)
 {
@@ -172,6 +175,7 @@ static inline void *uk_do_memalign(struct uk_alloc *a,
 	UK_ASSERT(a);
 	return a->memalign(a, align, size);
 }
+
 static inline void *uk_memalign(struct uk_alloc *a,
 				size_t align, size_t size)
 {
@@ -185,41 +189,38 @@ static inline void uk_do_free(struct uk_alloc *a, void *ptr)
 	UK_ASSERT(a);
 	a->free(a, ptr);
 }
+
 static inline void uk_free(struct uk_alloc *a, void *ptr)
 {
 	uk_do_free(a, ptr);
 }
 
-#if CONFIG_LIBUKALLOC_IFPAGES
-static inline void *uk_do_palloc(struct uk_alloc *a, size_t order)
+static inline void *uk_do_palloc(struct uk_alloc *a, unsigned long num_pages)
 {
 	UK_ASSERT(a);
-	return a->palloc(a, order);
+	return a->palloc(a, num_pages);
 }
-static inline void *uk_palloc(struct uk_alloc *a, size_t order)
+
+static inline void *uk_palloc(struct uk_alloc *a, unsigned long num_pages)
 {
-	if (unlikely(!a))
+	if (unlikely(!a || !a->palloc))
 		return NULL;
-	return a->palloc(a, order);
+	return uk_do_palloc(a, num_pages);
 }
-static inline void *uk_malloc_page(struct uk_alloc *a)
-{
-	return uk_palloc(a, 0);
-}
-static inline void uk_do_pfree(struct uk_alloc *a, void *ptr, size_t order)
+
+static inline void uk_do_pfree(struct uk_alloc *a, void *ptr,
+			       unsigned long num_pages)
 {
 	UK_ASSERT(a);
-	a->pfree(a, ptr, order);
+	a->pfree(a, ptr, num_pages);
 }
-static inline void uk_pfree(struct uk_alloc *a, void *ptr, size_t order)
+
+static inline void uk_pfree(struct uk_alloc *a, void *ptr,
+			    unsigned long num_pages)
 {
-	uk_do_pfree(a, ptr, order);
+	uk_do_pfree(a, ptr, num_pages);
 }
-static inline void uk_free_page(struct uk_alloc *a, void *ptr)
-{
-	return uk_pfree(a, ptr, 0);
-}
-#endif
+
 static inline int uk_alloc_addmem(struct uk_alloc *a, void *base,
 				  size_t size)
 {

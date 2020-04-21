@@ -1,8 +1,0 @@
-fpathconf
-sysconf
-confstr
-pathconf
-getpagesize
-uname
-gethostname
-sethostname

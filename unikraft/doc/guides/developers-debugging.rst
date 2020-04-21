@@ -55,11 +55,26 @@ in a paused state (`-S` parameter): ::
 
   qemu-system-x86_64 -s -S -cpu host -enable-kvm -m 128 -nodefaults -no-acpi -display none -serial stdio -device isa-debug-exit -kernel build/helloworld_kvm-x86_64 -append verbose
 
-and connect gdb by using the debug image with: ::
+Note that the `-s` parameter is shorthand for `-gdb tcp::1234`. Now
+connect gdb by using the debug image with: ::
 
   gdb --eval-command="target remote :1234" build/helloworld_kvm-x86_64.dbg
 
-You can initiate qemu to start the guest's execution by typing `c` within gdb.
+Unless you're debugging early boot code (until ``_libkvmplat_start32``), you'll need to set a hardware break point: ::
+
+  hbreak [location]
+  continue
+
+We'll now need to set the right CPU architecture: ::
+
+  disconnect
+  set arch i386:x86-64:intel
+
+And reconnect: ::
+
+  tar remote localhost:1234
+
+You can now run ``continue`` and debug as you would normally.
 
 For Xen the process is slightly more complicated and depends on Xen's
 gdbsx tool. First you'll need to make sure you have the tool on your
@@ -85,105 +100,129 @@ You should be also able to use the debugging file
 image.
 
 ============================
-Trace points
+Tracepoints
 ============================
 
 ----------------------------
 Dependencies
 ----------------------------
-The ``support/scripts/uk_trace/trace.py`` depends on python modules
-click and tabulate. You can install them by running: ::
+We provide some tools to read and export trace data that were collected with
+Unikraft's tracepoint system. The tools depend on Python3, as well as the
+`click` and `tabulate` modules. You can install them by running
+(Debian/Ubuntu):
 
-  sudo apt-get install python3-click python3-tabulate
+.. code-block:: sh
 
-Or, you can install trace.py into a local virtual environment: ::
+  sudo apt-get install python3 python3-click python3-tabulate
 
-  python3 -m venv env
-  . env/bin/activate
-  cd support/scripts/uk_trace
-  pip install --upgrade pip setuptools wheel
-  pip install --editable .
-  deactivate
-  cd -
+----------------
+Enabling Tracing
+----------------
+Tracepoints are provided by `lib/ukdebug`. To enable Unikraft to collect
+trace data, enable the option ``CONFIG_LIBUKDEBUG_TRACEPOINTS`` in your
+configuration (via ``make menuconfig`` under `Library Configuration` ->
+`ukdebug` -> `Enable tracepoints`).
 
-All the dependencies will be installed in the 'env' folder, not to
-your machine. You do not have to enter your virtual environment, you
-can call the installed script directly: ::
+The configuration option ``CONFIG_LIBUKDEBUG_ALL_TRACEPOINTS`` activates
+**all** existing tracepoints. Because tracepoints may noticeably
+affect performance, you can alternatively enable tracepoints only for
+compilation units that you are interested in.
 
-  env/bin/uk-trace --help
-
-Because of ``--editable`` flag, any modifications made to
-``support/scripts/uk_trace/trace.py`` will be reflected in the
-installed file.
-
-----------------------------
-Reading tracepoints
-----------------------------
-
-Tracepoints are provided by ``libukdebug``. To make Unikraft collect
-tracing data enable the option ``CONFIG_LIBUKDEBUG_TRACEPOINTS`` in your
-config (via ``make menuconfig``).
-
-Because tracepoints can noticeably affect performance, selective
-enabling is implemented. Option ``CONFIG_LIBUKDEBUG_TRACEPOINTS`` just
-enables the functionality, but all the tracepoints are compiled into
-nothing by default (have no effect). If you would like one library to
-collect tracing data, add to it's Makefile.uk
+This can be done with the ``Makefile.uk`` of each library:
 
 .. code-block:: make
 
-   LIBAPPNAME_CFLAGS += -DUK_DEBUG_TRACE
+   # Enable tracepoints for a whole library
+   LIBNAME_CFLAGS-y += -DUK_DEBUG_TRACE
+   LIBNAME_CXXFLAGS-y += -DUK_DEBUG_TRACE
 
-If you need just the information about tracepoints in one file, define
-``UK_DEBUG_TRACE`` **before** ``#include <uk/trace.h>``.
+   # Alternatively, enable tracepoints of source files you are interested in
+   LIBNAME_FILENAME1_FLAGS-y += -DUK_DEBUG_TRACE
+   LIBNAME_FILENAME2_FLAGS-y += -DUK_DEBUG_TRACE
 
-If you wish to enable **ALL** existing tracepoints, enable
-``CONFIG_LIBUKDEBUG_ALL_TRACEPOINTS`` in menuconfig.
-
-When tracing is enabled, unikraft will write samples into internal
-trace buffer. Currently it is not a circular buffer, as soon as it
-overflows, unikraft will stop collecting data.
-
-To read the collected data you have 2 options:
-
-1. Inside gdb
-
-2. Using trace.py
-
-For the first option, you need the 'uk-gdb.py' helper loaded into the
-gdb session. To make this happen all you need to do is to add the
-following line into ~/.gdbinit: ::
-
-  add-auto-load-safe-path /path/to/your/build/directory
-
-With this, gdb will load helper automatically, each time you start gdb
-with a *.dbg image. For example ::
-
-  gdb helloworld/build/helloworld_kvm-x86_64.dbg
-
-Now you can print tracing log by issuing command ``uk
-trace``. Alternatively, you can save all trace data into a binary file
-with ``uk trace save <filename>``. This tracefile can be processed
-later offline using the trace.py script: ::
-
-  support/scripts/uk_trace/trace.py list <filename>
-
-Which brings us to the second option. Trace.py can run gdb and fetch
-the tracefile for you. Just run: ::
-
-  support/scripts/uk_trace/trace.py fetch  <your_unikraft_image>.dbg
-
-.. note:: The *.dbg image is required, as it have offline data needed
-          for parsing the trace buffer.
-
-----------------------------
-Adding your tracepoints
-----------------------------
-Bellow is a snippet for using tracepoints:
+This can also be done by defining ``UK_DEBUG_TRACE`` in the head of your source
+file(s). Please make sure that ``UK_DEBUG_TRACE`` is defined **before**
+``<uk/trace.h>`` is included:
 
 .. code-block:: c
 
+   #ifndef UK_DEBUG_TRACE
+   #define UK_DEBUG_TRACE
+   #endif
+
+   #include <uk/trace.h>
+
+As soon as tracing is enabled, Unikraft will store samples of each enabled
+tracepoint into an internal trace buffer. Currently this is not a circular
+buffer. This means that as soon as it is full, Unikraft will stop collecting
+further samples.
+
+------------------
+Reading Trace Data
+------------------
+Unikraft is storing trace data to an internal buffer that resides in the
+guest's main memory. You can use `gdb` to read and export it.
+For this purpose, you will need to load ``uk-gdb.py`` helper into your
+`gdb` session. It adds additional commands that allow you to list and store
+the trace data. We recommend to automatically load the script to `gdb`.
+For this purpose, add the following line to your
+``~/.gdbinit``: ::
+
+  source /path/to/your/build/uk-gdb.py
+
+In order to collect the data, open `gdb` with the debug image and connect to
+your Unikraft instance as described in Section :ref:`Using GDB`:
+
+.. code-block:: sh
+
+  gdb helloworld/build/helloworld_kvm-x86_64.dbg
+
+.. note:: The ``.dbg`` image is required because it contains offline data needed
+          for parsing the trace buffer.
+
+As soon as you let run your guest, samples should be stored in Unikraft's trace
+buffer. You can print them by issuing the `gdb` command ``uk trace``: ::
+
+  (gdb) uk trace
+
+Alternatively, you can save all trace data to disk with
+``uk trace save <filename>``: ::
+
+  (gdb) uk trace save traces.dat
+
+.. note:: It may make sense to connect with `gdb` after the guest execution has
+	  been finished (and the trace buffer got filled). For this purpose,
+	  make sure that your hypervisor is not destroying the instance after
+	  guest shut down (on `qemu`, add ``--no-shutdown`` and ``--no-reboot``
+	  parameters).
+
+.. note:: If you are seeing the error message
+	  ``Error getting the trace buffer. Is tracing enabled?``, you
+	  probably did not enable tracing or Unikraft's trace buffer is
+	  empty. This can happen when no tracepoint was ever called.
+
+
+Any saved trace file can be later processed with the ``trace.py`` script.
+In our example:
+
+.. code-block:: sh
+
+  support/scripts/uk_trace/trace.py list traces.dat
+
+--------------------
+Creating Tracepoints
+--------------------
+Instrumenting your code with tracepoints is done by two steps. First, you define
+and register a tracepoint handler with the ``UK_TRACEPOINT()`` macro.
+Second, you place calls to the generated handler at those places in your code
+where your want to trace an event:
+
+.. code-block:: c
+
+  #include <uk/trace.h>
+
   UK_TRACEPOINT(trace_vfs_open, "\"%s\" 0x%x 0%0o", const char*, int, mode_t);
+
   int open(const char *pathname, int flags, ...)
   {
   	trace_vfs_open(pathname, flags, mode);
@@ -193,30 +232,11 @@ Bellow is a snippet for using tracepoints:
   	return 0;
   }
 
-Macro ``UK_TRACEPOINT(trace_name, fmt, type1, type2, ... typeN)``
-generates a static function `trace_name()`, accepting N parameters, of
-types **type1**, **type2** and so on. Up to 7 parameters supported. The
-**fmt** is a printf-style format which will be used to form a message
-corresponding to the trace sample.
-
-The **fmt** is static and stored offline. Only parameters values are
-saved on the trace buffer. It is the job of the offline parser to
-match them together and print out resulting messages.
-
-Now you can call the generated function from the point of
-interest. You are expected to call one tracepoint from exactly one
-place in your code.
-
-----------------------------
-Troubleshooting
-----------------------------
-If you are getting a message::
-
-  Error getting the trace buffer. Is tracing enabled?
-
-This might be because:
-
-1. Because you indeed need to enable tracing
-
-2. Not a single tracepoint has been called, and dead-code elimination
-   removed (rightfully) the tracing functionality
+``UK_TRACEPOINT(trace_name, fmt, type1, type2, ... typeN)`` generates
+the handler ``trace_name()`` (static function). It will accept up
+to 7 parameters of type ``type1``, ``type2``, etc. The given format string
+``fmt`` is a `printf`-style format which will be used to create meaningful
+messages based on the collected trace parameters. This format string is
+only kept in the debug image and is used by the tools to read and parse the
+trace data. Unikraft's trace buffer stores for each sample a timestamp,
+the name of the tracepoint, and the given parameters.

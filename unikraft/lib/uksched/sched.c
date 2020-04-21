@@ -119,7 +119,7 @@ struct uk_sched *uk_sched_create(struct uk_alloc *a, size_t prv_size)
 
 	sched = uk_malloc(a, sizeof(struct uk_sched) + prv_size);
 	if (sched == NULL) {
-		uk_pr_warn("Could not allocate scheduler.");
+		uk_pr_warn("Failed to allocate scheduler\n");
 		return NULL;
 	}
 
@@ -141,9 +141,9 @@ static void *create_stack(struct uk_alloc *allocator)
 {
 	void *stack;
 
-	stack = uk_palloc(allocator, STACK_SIZE_PAGE_ORDER);
-	if (stack == NULL) {
-		uk_pr_warn("Error allocating thread stack.");
+	if (uk_posix_memalign(allocator, &stack,
+			      STACK_SIZE, STACK_SIZE) != 0) {
+		uk_pr_err("Failed to allocate thread stack\n");
 		return NULL;
 	}
 
@@ -155,8 +155,10 @@ static void *uk_thread_tls_create(struct uk_alloc *allocator)
 	void *tls;
 
 	if (uk_posix_memalign(allocator, &tls, ukarch_tls_area_align(),
-				ukarch_tls_area_size()))
+			      ukarch_tls_area_size()) != 0) {
+		uk_pr_err("Failed to allocate thread TLS area\n");
 		return NULL;
+	}
 	ukarch_tls_area_copy(tls);
 	return tls;
 }
@@ -188,7 +190,7 @@ void uk_sched_idle_init(struct uk_sched *sched,
 	return;
 
 out_crash:
-	UK_CRASH("Error initializing the idle thread.");
+	UK_CRASH("Failed to initialize `idle` thread\n");
 }
 
 struct uk_thread *uk_sched_thread_create(struct uk_sched *sched,
@@ -202,7 +204,7 @@ struct uk_thread *uk_sched_thread_create(struct uk_sched *sched,
 
 	thread = uk_malloc(sched->allocator, sizeof(struct uk_thread));
 	if (thread == NULL) {
-		uk_pr_warn("Error allocating memory for thread.");
+		uk_pr_err("Failed to allocate thread\n");
 		goto err;
 	}
 
@@ -250,7 +252,7 @@ void uk_sched_thread_destroy(struct uk_sched *sched, struct uk_thread *thread)
 
 	UK_TAILQ_REMOVE(&sched->exited_threads, thread, thread_list);
 	uk_thread_fini(thread, sched->allocator);
-	uk_pfree(sched->allocator, thread->stack, STACK_SIZE_PAGE_ORDER);
+	uk_free(sched->allocator, thread->stack);
 	if (thread->tls)
 		uk_free(sched->allocator, thread->tls);
 	uk_free(sched->allocator, thread);
@@ -277,5 +279,5 @@ void uk_sched_thread_exit(void)
 	thread = uk_thread_current();
 	UK_ASSERT(thread->sched);
 	uk_sched_thread_remove(thread->sched, thread);
-	UK_CRASH("Error stopping thread.");
+	UK_CRASH("Failed to stop the thread\n");
 }
