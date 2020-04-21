@@ -1,0 +1,74 @@
+rt/
+├── aaA.d
+├── aApply.d
+├── aApplyR.d
+├── adi.d
+├── arrayassign.d
+├── arraycast.d
+├── arraycat.d
+├── cast_.d
+├── config.d
+├── critical_.d
+├── deh.d
+├── dmain2.d
+├── dylib_fixes.c
+├── invariant.d
+├── lifetime.d
+├── memory.d
+├── minfo.d
+├── monitor_.d
+├── obj.d
+├── qsort.d
+├── sections.d
+├── switch_.d
+├── tlsgc.d
+├── typeinfo
+│   ├── ti_Acdouble.d
+│   ├── ti_Acfloat.d
+│   ├── ti_Acreal.d
+│   ├── ti_Adouble.d
+│   ├── ti_Afloat.d
+│   ├── ti_Ag.d
+│   ├── ti_Aint.d
+│   ├── ti_Along.d
+│   ├── ti_Areal.d
+│   ├── ti_Ashort.d
+│   ├── ti_byte.d
+│   ├── ti_C.d
+│   ├── ti_cdouble.d
+│   ├── ti_cent.d
+│   ├── ti_cfloat.d
+│   ├── ti_char.d
+│   ├── ti_creal.d
+│   ├── ti_dchar.d
+│   ├── ti_delegate.d
+│   ├── ti_double.d
+│   ├── ti_float.d
+│   ├── ti_idouble.d
+│   ├── ti_ifloat.d
+│   ├── ti_int.d
+│   ├── ti_ireal.d
+│   ├── ti_long.d
+│   ├── ti_n.d
+│   ├── ti_ptr.d
+│   ├── ti_real.d
+│   ├── ti_short.d
+│   ├── ti_ubyte.d
+│   ├── ti_ucent.d
+│   ├── ti_uint.d
+│   ├── ti_ulong.d
+│   ├── ti_ushort.d
+│   ├── ti_void.d
+│   └── ti_wchar.d
+└── util
+    ├── array.d
+    ├── container
+    │   ├── array.d
+    │   ├── common.d
+    │   ├── hashtab.d
+    │   └── treap.d
+    ├── random.d
+    ├── typeinfo.d
+    └── utf.d
+
+3 directories, 68 files
