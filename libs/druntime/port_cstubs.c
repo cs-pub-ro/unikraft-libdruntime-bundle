@@ -97,32 +97,3 @@ char *__progname=0, *__progname_full=0;
 weak_alias(__progname, program_invocation_short_name);
 weak_alias(__progname_full, program_invocation_name);
 
-
-struct backtrace_state {};
-
-typedef void (*backtrace_error_callback)(void*, const char *, int);
-
-struct backtrace_state* backtrace_create_state(const char * filename, int threaded,
-                                        backtrace_error_callback error_callback, void* data)
-    {return 0;}
-
-typedef int (*backtrace_full_callback)(void*, uintptr_t, const char *, int, const char *);
-
-int backtrace_full(struct backtrace_state* state, int skip, backtrace_full_callback callback,
-                   backtrace_error_callback error_callback, void* data) {return 0;}
-
-typedef int (*backtrace_simple_callback)(void*, uintptr_t);
-
-int backtrace_simple(struct backtrace_state* state, int skip, backtrace_simple_callback callback,
-                     backtrace_error_callback error_callback, void* data) {return 0;}
-
-//void backtrace_print(struct backtrace_state* state, int skip, FILE* file) {}
-
-int backtrace_pcinfo(struct backtrace_state* state, uintptr_t pc, backtrace_full_callback callback,
-                     backtrace_error_callback error_callback,    void* data) {return 0;}
-
-typedef void (*backtrace_syminfo_callback)(void*, uintptr_t, const char *, uintptr_t symval);
-
-int backtrace_syminfo(struct backtrace_state *state, uintptr_t pc, backtrace_syminfo_callback callback,
-                      backtrace_error_callback error_callback, void* data) {return 0;}
-
