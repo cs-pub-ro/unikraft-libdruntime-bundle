@@ -79,11 +79,7 @@ LIBDRUNTIME_COMMON_INCLUDES-y = -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime
 LIBDRUNTIME_ASINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 LIBDRUNTIME_CINCLUDES-y  = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 
-LIBDRUNTIME_INCLUDES-y	+= $(LIBDRUNTIME_COMMON_INCLUDES-y)
-
-LIBDRUNTIME_GDCINCLUDES	+= $(LIBDRUNTIME_INCLUDES-y)
-
-
+GDCINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 ################################################################################
 # Global flags
 ################################################################################
