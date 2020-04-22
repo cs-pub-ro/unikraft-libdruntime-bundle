@@ -1,0 +1,32 @@
+From bbcaae992f53d8648abab5254e81bdf30640911c Mon Sep 17 00:00:00 2001
+From: Charalampos Mainas <Charalampos.Mainas@neclab.eu>
+Date: Wed, 29 May 2019 11:34:03 +0200
+Subject: [PATCH] Add ucontext header file
+
+makecontext uses the struct ucontext_t which is not defined anywhere in
+newlib. In musl signal.h includes bits/signal.h which defines ucontext_t
+struct. Therefore newlib's signal.h is replaced by musl's ucontext.h
+header which includes bits/signal.h.
+
+Signed-off-by: Charalampos Mainas <Charalampos.Mainas@neclab.eu>
+
+---
+ arch/x86_64/makecontext.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86_64/makecontext.c b/arch/x86_64/makecontext.c
+index ba6ca59..e272008 100644
+--- a/arch/x86_64/makecontext.c
++++ b/arch/x86_64/makecontext.c
+@@ -13,7 +13,7 @@
+ #define _GNU_SOURCE
+ #include <stddef.h>
+ #include <stdarg.h>
+-#include <signal.h>
++#include <ucontext.h>
+ #include <string.h>
+ #include <stdint.h>
+ 
+-- 
+2.17.1
+

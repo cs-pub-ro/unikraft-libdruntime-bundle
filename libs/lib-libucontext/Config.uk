@@ -1,0 +1,7 @@
+config LIBUCONTEXT
+	bool "ucontext.h API"
+	default n
+	select LIBNEWLIBC
+
+if LIBUCONTEXT
+endif
