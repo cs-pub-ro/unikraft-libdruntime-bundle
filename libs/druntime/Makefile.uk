@@ -105,6 +105,9 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/comm
 
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_BASE)/port_cstubs.c
 
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d|gcc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/libbacktrace.d|gcc
+
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/object.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/math.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/demangle.d
@@ -269,7 +272,6 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/deh.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/drtstuff.c
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/emutls.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/gthread.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d|gcc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/os.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/proxy.d|gc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/impl/conservative/gc.d|conservative
@@ -347,3 +349,16 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/aApply.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/monitor_.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/dylib_fixes.c
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/qsort.d
+
+# Instantiate the config.d.in and libbacktrace.d.in templates
+$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d: $(LIBDRUNTIME_EXTRACTED)/libphobos/config.status
+	$(call build_cmd,GEN,libdruntime,$(notdir $@),cd $(LIBDRUNTIME_EXTRACTED)/libphobos && ./config.status -q libdruntime/gcc/config.d)
+
+$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/libbacktrace.d: $(LIBDRUNTIME_EXTRACTED)/libphobos/config.status
+	$(call build_cmd,GEN,libdruntime,$(notdir $@),cd $(LIBDRUNTIME_EXTRACTED)/libphobos && ./config.status -q libdruntime/gcc/libbacktrace.d)
+
+
+# Generate config.status script
+$(LIBDRUNTIME_EXTRACTED)/libphobos/config.status: $(LIBDRUNTIME_EXTRACTED)/libphobos/configure
+	$(call build_cmd,GEN,libdruntime,$(notdir $@),cd $(LIBDRUNTIME_EXTRACTED)/libphobos && ./configure -q --no-create --no-recursion)
+
