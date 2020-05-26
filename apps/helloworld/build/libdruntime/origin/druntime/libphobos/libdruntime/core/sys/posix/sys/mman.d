@@ -235,10 +235,14 @@ int munmap(void*, size_t);
 version (CRuntime_Glibc)
 {
     static if (__USE_LARGEFILE64) void* mmap64(void*, size_t, int, int, int, off_t);
-    static if (__USE_FILE_OFFSET64)
-        alias mmap = mmap64;
-    else
-        void* mmap(void*, size_t, int, int, int, off_t);
+    version (UNIKRAFT) {
+        void *mmap(void *, size_t, int, int, int, off_t);
+    } else {
+        static if (__USE_FILE_OFFSET64)
+            alias mmap = mmap64;
+        else
+            void* mmap(void*, size_t, int, int, int, off_t);
+    }
     int munmap(void*, size_t);
 }
 else version (Darwin)

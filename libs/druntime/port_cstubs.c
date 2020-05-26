@@ -66,7 +66,7 @@ void _pthread_cleanup_pop(struct _pthread_cleanup_buffer* buf, int t) {}
 
 
 
-void* mmap64(void* a, size_t b, int c, int d , int e, off_t f) {return 0;}
+//void* mmap64(void* a, size_t b, int c, int d , int e, off_t f) {return 0;}
 
 
 uint32_t htonl(uint32_t t) {return 0;}

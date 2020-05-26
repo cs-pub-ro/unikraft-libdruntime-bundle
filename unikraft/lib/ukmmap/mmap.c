@@ -38,6 +38,13 @@
 #include <uk/alloc.h>
 #include <string.h>
 
+#ifdef DRUNTIME
+#include <uk/essentials.h>
+
+#define size_to_num_pages(size) \
+	(ALIGN_UP((unsigned long)(size), __PAGE_SIZE) / __PAGE_SIZE)
+#endif
+
 struct mmap_addr {
 	void *begin;
 	void *end;
@@ -94,8 +101,12 @@ void *mmap(void *addr, size_t len, int prot,
 		last = tmp;
 		tmp = tmp->next;
 	}
-	void *mem = uk_malloc(uk_alloc_get_default(), len);
-
+#ifdef DRUNTIME
+    int num_pages = size_to_num_pages(len);
+	void *mem = uk_palloc(uk_alloc_get_default(), num_pages);
+#else
+    void *mem = uk_malloc(uk_alloc_get_default(), len);
+#endif
 	if (!mem) {
 		errno = ENOMEM;
 		return (void *) -1;
