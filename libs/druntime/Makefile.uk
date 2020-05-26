@@ -79,23 +79,28 @@ LIBDRUNTIME_COMMON_INCLUDES-y = -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime
 LIBDRUNTIME_ASINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 LIBDRUNTIME_CINCLUDES-y  = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 
-GDCINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 ################################################################################
 # Global flags
+GDCINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
+
+CFLAGS += -DDRUNTIME
 ################################################################################
 # Suppress flags
-LIBDRUNTIME_SUPPRESS_FLAGS += -Wno-cast-qual -Wno-unused-value -Wno-unused-parameter
+LIBDRUNTIME_SUPPRESS_FLAGS_C += -Wno-cast-qual -Wno-unused-value -Wno-unused-parameter
+LIBDRUNTIME_SUPPRESS_FLAGS_GDC += -Wno-unused-value -Wno-unused-parameter
 
-LIBDRUNTIME_CFLAGS-y   += $(LIBDRUNTIME_SUPPRESS_FLAGS)
+LIBDRUNTIME_CFLAGS-y   += $(LIBDRUNTIME_SUPPRESS_FLAGS_C)
 LIBDRUNTIME_CFLAGS-y   += -fexceptions -fnon-call-exceptions \
 	-fplan9-extensions -fno-split-stack -Wall -Wextra -Wwrite-strings \
 	-Wcast-qual -Wno-unused-function -minline-all-stringops \
 	-Wno-implicit-function-declaration -D_GNU_SOURCE -D_LARGEFILE_SOURCE \
-	-D_FILE_OFFSET_BITS=64
+	-D_FILE_OFFSET_BITS=64 -DDRT_BEGIN -DDRT_END
 
 # Here you may add any version symbols, as needed
-LIBDRUNTIME_GDCFLAGS +=
-LIBDRUNTIME_GDCFLAGS-y +=
+LIBDRUNTIME_GDCFLAGS += $(LIBDRUNTIME_SUPPRESS_FLAGS_GDC)
+LIBDRUNTIME_GDCFLAGS += -fexceptions -fnon-call-exceptions \
+	-fno-split-stack -Wall -Wextra -Wno-unused-function -minline-all-stringops
+LIBDRUNTIME_GDCFLAGS += -fversion=UNIKRAFT #-fversion=Shared
 
 ################################################################################
 # druntime code
@@ -211,52 +216,6 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/po
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/grp.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/termios.d|posix
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/config.d|posix
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/fcntl.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/epoll.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/errno.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sched.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/tipc.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/elf.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/timerfd.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/time.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/netinet/in_.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/netinet/tcp.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/unistd.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/stdio.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/xattr.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/eventfd.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/prctl.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/file.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/time.d|linux_sys
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/netinet/tcp.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/mman.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/signalfd.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/inotify.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/socket.d|sys
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/sysinfo.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/sys/auxv.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/ifaddrs.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/dlfcn.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/termios.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/config.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/execinfo.d|linux
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/linux/link.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/bionic/fcntl.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/bionic/unistd.d|bionic
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/semaphore.d|mach
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/kern_return.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/getsect.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/loader.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/dyld.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/port.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/mach/thread_act.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/netinet/in_.d|darwin
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/event.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/cdefs.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/sys/mman.d|darwin
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/pthread.d|darwin
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/dlfcn.d|darwin
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/darwin/execinfo.d|darwin
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/attribute.d|gcc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/package.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/unwind/arm_common.d
@@ -349,6 +308,7 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/aApply.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/monitor_.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/dylib_fixes.c
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/qsort.d
+
 
 # Instantiate the config.d.in and libbacktrace.d.in templates
 $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d: $(LIBDRUNTIME_EXTRACTED)/libphobos/config.status
