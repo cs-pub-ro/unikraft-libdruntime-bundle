@@ -3199,7 +3199,7 @@ extern(C) void thread_processGCMarks( scope IsMarkedDg isMarked ) nothrow
 
 extern (C) @nogc nothrow
 {
-    version (CRuntime_Glibc) int pthread_getattr_np(pthread_t thread, pthread_attr_t* attr);
+    version (CRuntime_Glibc) int pthread_getattr_np(pthread_attr_t* attr, pthread_t thread);
     version (FreeBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (NetBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
     version (DragonFlyBSD) int pthread_attr_get_np(pthread_t thread, pthread_attr_t* attr);
@@ -3262,7 +3262,8 @@ private void* getStackBottom() nothrow @nogc
         pthread_attr_t attr;
         void* addr; size_t size;
 
-        pthread_getattr_np(pthread_self(), &attr);
+        pthread_attr_init(&attr);
+        pthread_getattr_np(&attr, pthread_self());
         pthread_attr_getstack(&attr, &addr, &size);
         pthread_attr_destroy(&attr);
         version (StackGrowsDown)

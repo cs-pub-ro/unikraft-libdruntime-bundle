@@ -79,7 +79,7 @@ out:
 	return rc;
 }
 
-int pthread_getattr_np(pthread_t thread, pthread_attr_t *attr)
+int pthread_getattr_np(pthread_attr_t *attr, pthread_t thread)
 {
 	pte_thread_t *tp = (pte_thread_t *) thread.p;
 	struct uk_thread *_uk_thread;
