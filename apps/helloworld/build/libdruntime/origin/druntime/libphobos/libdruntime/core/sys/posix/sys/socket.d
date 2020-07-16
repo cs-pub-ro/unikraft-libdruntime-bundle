@@ -162,10 +162,11 @@ version (CRuntime_Glibc)
     // Some of the constants below and from the Bionic section are really from
     // the linux kernel headers.
     alias uint   socklen_t;
-    alias ushort sa_family_t;
+    alias ubyte sa_family_t;
 
     struct sockaddr
     {
+        ubyte       sa_len;
         sa_family_t sa_family;
         byte[14]    sa_data;
     }

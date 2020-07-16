@@ -90,13 +90,13 @@ version (CRuntime_Glibc)
 
     struct sockaddr_in
     {
+        ubyte       sin_len;
         sa_family_t sin_family;
         in_port_t   sin_port;
         in_addr     sin_addr;
 
         /* Pad to size of `struct sockaddr'. */
-        ubyte[__SOCK_SIZE__ - sa_family_t.sizeof -
-              in_port_t.sizeof - in_addr.sizeof] __pad;
+        ubyte[8] __pad;
     }
 
     enum
