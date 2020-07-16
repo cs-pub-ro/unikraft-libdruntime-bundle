@@ -907,11 +907,15 @@ else version (CRuntime_Glibc)
     }
 
     ///
-    extern shared FILE* stdin;
+    extern shared FILE* _stdin;
     ///
-    extern shared FILE* stdout;
+    extern shared FILE* _stdout;
     ///
-    extern shared FILE* stderr;
+    extern shared FILE* _stderr;
+
+    alias _stdin    stdin;
+    alias _stdout   stdout;
+    alias _stderr   stderr;
 }
 else version (Darwin)
 {

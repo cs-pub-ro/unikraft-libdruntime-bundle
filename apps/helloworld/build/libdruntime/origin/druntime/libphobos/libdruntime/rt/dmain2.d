@@ -156,6 +156,10 @@ extern (C) __gshared bool rt_trapExceptions = true;
 
 alias void delegate(Throwable) ExceptionHandler;
 
+version (UNIKRAFT) {
+    extern (C) void initStdIO();
+}
+
 /**
  * Keep track of how often rt_init/rt_term were called.
  */
@@ -168,6 +172,9 @@ shared size_t _initCount;
  */
 extern (C) int rt_init()
 {
+    version (UNIKRAFT) {
+        initStdIO();
+    }
     /* @@BUG 11380 @@ Need to synchronize rt_init/rt_term calls for
        version (Shared) druntime, because multiple C threads might
        initialize different D libraries without knowing about the
