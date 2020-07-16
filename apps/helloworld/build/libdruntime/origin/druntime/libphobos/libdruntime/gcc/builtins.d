@@ -45,3 +45,24 @@ module gcc.builtins;
 
 public alias __builtin_clonglong  = long;
 public alias __builtin_culonglong = ulong;
+
+extern (C) void __atomic_store_c(int size, void *dest, void *src, int model) pure nothrow @nogc;
+
+void __atomic_store(int size, void *dest, void *src, int model) pure nothrow @nogc {
+    __atomic_store_c(size, dest, src, model);
+}
+
+extern (C) int __atomic_compare_exchange_c(int size, void *dest, void *src, void *desired,
+                        int success, int failure) pure nothrow @nogc;
+
+bool __atomic_compare_exchange(int size, void *dest, void *src, void *desired,
+                        int success, int failure) pure nothrow @nogc {
+    return cast(bool)__atomic_compare_exchange_c(size, dest, src, desired, success, failure);
+}
+
+extern (C) void __atomic_load_c(int size, void *dest, void *src, int model) pure nothrow @nogc @trusted;
+
+void __atomic_load(int size, void *dest, void *src, int model) pure nothrow @nogc {
+    __atomic_load_c(size, dest, src, model);
+}
+

@@ -1379,8 +1379,8 @@ else version (GNU)
             }
             else static if (GNU_Have_LibAtomic)
             {
-                res = __atomic_compare_exchange(T.sizeof, here, cast(void*) &ifThis, cast(void*) &writeThis,
-                                                MemoryOrder.seq, MemoryOrder.seq);
+                res = __atomic_compare_exchange(T.sizeof, cast(void *)here, cast(void*)&ifThis,
+                        cast(void *) &writeThis, MemoryOrder.seq, MemoryOrder.seq);
             }
             else
                 static assert(0, "Invalid template type specified.");
@@ -1458,7 +1458,7 @@ else version (GNU)
             else static if (GNU_Have_LibAtomic)
             {
                 T value;
-                __atomic_load(T.sizeof, &val, cast(void*)&value, ms);
+                __atomic_load(T.sizeof, cast(void *)&val, cast(void*)&value, ms);
                 return *cast(HeadUnshared!T*) &value;
             }
             else
@@ -1499,7 +1499,7 @@ else version (GNU)
             }
             else static if (GNU_Have_LibAtomic)
             {
-                __atomic_store(T.sizeof, &val, cast(void*)&newval, ms);
+                __atomic_store(T.sizeof, cast(void *)&val, cast(void*)&newval, ms);
             }
             else
                 static assert(0, "Invalid template type specified.");
