@@ -2038,7 +2038,6 @@ struct MonoTimeImpl(ClockType clockType)
     private enum _clockName = _clockTypeName(clockType);
 
 @safe:
-
     version (Windows)
     {
         static if (clockType != ClockType.coarse &&
@@ -2544,6 +2543,8 @@ unittest
         // common denominator supported by all versions of Linux pre-2.6.12.
         version (Linux_Pre_2639)
             return c == ClockType.normal || c == ClockType.precise;
+        else version (UNIKRAFT)
+            return c == ClockType.normal || c == ClockType.precise;
         else
             return c != ClockType.second; // second doesn't work with MonoTimeImpl
 
@@ -2813,8 +2814,8 @@ struct TickDuration
                     //or worse, but the time is updated much more frequently
                     //than that). In such cases, we'll just use nanosecond
                     //resolution.
-                    ticksPerSec = ts.tv_nsec >= 1000 ? 1_000_000_000
-                                                     : 1_000_000_000 / ts.tv_nsec;
+                    ticksPerSec = ts.tv_nsec >= 1000 || ts.tv_nsec == 0
+                        ? 1_000_000_000 : 1_000_000_000 / ts.tv_nsec;
                 }
             }
             else
