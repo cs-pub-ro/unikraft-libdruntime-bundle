@@ -485,7 +485,7 @@ unittest
     assert(f !is null);
     assert(fwprintf(f, testdata.ptr) == 5);
     assert(fflush(f) == 0);
-    assert(memcmp(ptr, testdata.ptr, testdata.length*wchar_t.sizeof) == 0);
+    assert(memcmp(ptr, testdata.ptr, (testdata.length - 1)*wchar_t.sizeof) == 0);
     assert(fclose(f) == 0);
 }
 
