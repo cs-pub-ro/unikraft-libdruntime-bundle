@@ -448,9 +448,12 @@ version (unittest)
     }
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
     unittest
     {
         testWait();
         testWaitTimeout();
     }
+}
 }

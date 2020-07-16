@@ -391,6 +391,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.atomic, core.thread, core.sync.semaphore;
@@ -525,4 +527,5 @@ unittest
     }
     runTest(ReadWriteMutex.Policy.PREFER_READERS);
     runTest(ReadWriteMutex.Policy.PREFER_WRITERS);
+}
 }

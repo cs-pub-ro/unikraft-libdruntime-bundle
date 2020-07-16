@@ -3373,6 +3373,8 @@ unittest
 }
 
 // improve predictability of coverage of code that is eventually not hit by other tests
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.memory;
@@ -3410,4 +3412,4 @@ unittest
     GC.free(z);
     GC.minimize(); // release huge pool
 }
-
+}

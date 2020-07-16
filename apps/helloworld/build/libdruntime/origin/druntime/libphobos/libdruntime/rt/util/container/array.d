@@ -208,6 +208,8 @@ unittest
     assert(cnt == 0);
 }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.exception;
@@ -229,4 +231,5 @@ unittest
     catch (OutOfMemoryError)
     {
     }
+}
 }

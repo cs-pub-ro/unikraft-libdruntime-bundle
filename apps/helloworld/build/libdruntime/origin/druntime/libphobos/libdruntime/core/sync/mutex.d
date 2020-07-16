@@ -302,6 +302,9 @@ package:
 ///
 /* @safe nothrow -> see druntime PR 1726 */
 // Test regular usage.
+
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.thread : Thread;
@@ -341,6 +344,7 @@ unittest
     assert (res.cargo == 20042);
 }
 
+}
 // Test @nogc usage.
 @system @nogc nothrow unittest
 {
@@ -399,6 +403,8 @@ unittest
     m.unlock();
 }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.thread;
@@ -426,4 +432,5 @@ unittest
 
     group.joinAll();
     assert(lockCount == numThreads * numTries);
+}
 }

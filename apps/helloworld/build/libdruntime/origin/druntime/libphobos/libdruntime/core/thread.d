@@ -1210,6 +1210,8 @@ class Thread
     }
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
     unittest
     {
         auto thr = Thread.getThis();
@@ -1236,6 +1238,7 @@ class Thread
         assert(prio >= PRIORITY_MIN && prio <= PRIORITY_MAX);
     }
 
+}
     ///////////////////////////////////////////////////////////////////////////
     // Actions on Calling Thread
     ///////////////////////////////////////////////////////////////////////////
@@ -1394,6 +1397,8 @@ class Thread
         return 0;
     }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
     unittest
     {
         auto t1 = new Thread({
@@ -1407,6 +1412,7 @@ class Thread
         t1.join();
         t2.join();
     }
+}
 
     private static Thread[] getAllImpl(alias resize)()
     {
@@ -1909,6 +1915,8 @@ private:
 }
 
 ///
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     class DerivedThread : Thread
@@ -1968,7 +1976,7 @@ unittest
         assert( t.msg == MSG );
     }
 }
-
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // GC Support Routines
@@ -2278,6 +2286,8 @@ extern (C) void thread_detachInstance( Thread t ) nothrow @nogc
 }
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     import core.sync.semaphore;
@@ -2294,6 +2304,7 @@ unittest
     foreach (t2; Thread)
         assert(t !is t2);
     t.join();
+}
 }
 
 
@@ -3068,6 +3079,8 @@ private void onThreadError(string msg = null, Throwable next = null) nothrow
 }
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     assert(!thread_inCriticalRegion());
@@ -3158,6 +3171,7 @@ unittest
     thread_suspendAll();
     assert(!inCriticalRegion);
     thread_resumeAll();
+}
 }
 
 /**
@@ -5208,6 +5222,8 @@ private:
 }
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 version (unittest)
 {
     class TestFiber : Fiber
@@ -5681,6 +5697,7 @@ unittest
     // use >PAGESIZE to avoid stack overflow (e.g. in an syscall)
     auto thr = new Thread(function{}, 4096 + 1).start();
     thr.join();
+}
 }
 
 /**

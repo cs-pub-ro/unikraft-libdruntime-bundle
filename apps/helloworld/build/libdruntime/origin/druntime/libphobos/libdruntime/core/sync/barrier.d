@@ -113,6 +113,8 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 version (unittest)
 {
     private import core.thread;
@@ -148,4 +150,5 @@ version (unittest)
         group.joinAll();
         assert( numReady == numThreads && numPassed == numThreads );
     }
+}
 }

@@ -2581,7 +2581,10 @@ unittest
 
 // Test handling of failed postblit
 // Not nothrow or @safe because of https://issues.dlang.org/show_bug.cgi?id=14242
-/+ nothrow @safe +/ unittest
+/+ nothrow @safe +/ 
+version (ENABLE_FAULTY_UNITTESTS)
+{
+unittest
 {
     static class FailedPostblitException : Exception { this() nothrow @safe { super(null); } }
     static string[] order;
@@ -2656,6 +2659,7 @@ unittest
     catch (Exception) assert(false);
 
     assert(postblitRecurseOrder == order);
+}
 }
 
 /++

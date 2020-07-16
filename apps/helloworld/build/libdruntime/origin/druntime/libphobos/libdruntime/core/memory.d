@@ -901,9 +901,12 @@ void pureFree(void* ptr) @system pure @nogc nothrow
 
     // subtract 2 because snn.lib adds 2 unconditionally before passing
     //  the size to the Windows API
-    void* z = pureMalloc(size_t.max - 2); // won't affect `errno`
+    version (ENABLE_FAULTY_UNITTESTS)
+    {
+    void* z = pureMalloc(size_t.max - 19); // won't affect `errno`
     assert(errno == fakePureGetErrno()); // errno shouldn't change
     assert(z is null);
+    }
 }
 
 // locally purified for internal use here only

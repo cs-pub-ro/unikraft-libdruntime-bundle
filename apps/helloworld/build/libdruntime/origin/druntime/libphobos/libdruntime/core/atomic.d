@@ -1801,6 +1801,8 @@ version (unittest)
         static assert(!__traits(compiles, cas(&ptr2, ifThis2, writeThis2)));
     }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
     unittest
     {
         import core.thread;
@@ -1836,6 +1838,7 @@ version (unittest)
 
         assert(*r == 42);
     }
+}
 
     // === atomicFetchAdd and atomicFetchSub operations ====
     pure nothrow @nogc @safe unittest

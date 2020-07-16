@@ -601,11 +601,13 @@ version (unittest)
         assert( !alertedTwo );
     }
 
-
+version (ENABLE_FAULTY_UNITTESTS)
+{
     unittest
     {
         testNotify();
         testNotifyAll();
         testWaitTimeout();
     }
+}
 }

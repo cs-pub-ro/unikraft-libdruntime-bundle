@@ -868,6 +868,8 @@ void runModuleFuncsRev(alias getfp)(const(immutable(ModuleInfo)*)[] modules)
     }
 }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 unittest
 {
     static void assertThrown(T : Throwable, E)(lazy E expr, string msg)
@@ -1109,7 +1111,7 @@ unittest
         //checkExp("closed ctors cycle", false, [&m0.mi, &m1.mi, &m2.mi], [&m0.mi, &m1.mi, &m2.mi]);
     }
 }
-
+}
 version (CRuntime_Microsoft)
 {
     // Dummy so Win32 code can still call it

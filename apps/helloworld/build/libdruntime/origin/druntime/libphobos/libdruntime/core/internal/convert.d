@@ -708,6 +708,8 @@ const(ubyte)[] toUbyte(T)(const ref T val) if (is(T == enum))
     }
 }
 
+version (ENABLE_FAULTY_UNITTESTS)
+{
 nothrow pure @safe unittest
 {
     // Issue 19008 - check toUbyte works on enums.
@@ -715,6 +717,7 @@ nothrow pure @safe unittest
     Month m = Month.jan;
     const bytes = toUbyte(m);
     enum ctfe_works = (() => { Month x = Month.jan; return toUbyte(x).length > 0; })();
+}
 }
 
 @trusted pure nothrow @nogc
