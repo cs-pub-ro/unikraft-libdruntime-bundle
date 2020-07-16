@@ -142,6 +142,7 @@ int munmap(void *addr, size_t len)
 	if (!addr)
 		return 0;
 	while (tmp) {
+#ifndef DRUNTIME
 		if (addr != tmp->begin) {
 			if (tmp->end > addr + len) {
 				errno = EINVAL;
@@ -169,6 +170,19 @@ int munmap(void *addr, size_t len)
 			uk_free(uk_alloc_get_default(), addr);
 			return 0;
 		}
+#else
+        if (addr == tmp->begin) {
+			int num_pages = size_to_num_pages(len);
+
+			if (!prev)
+				mmap_addr = tmp->next;
+			else
+				prev->next = tmp->next;
+			uk_free(uk_alloc_get_default(), tmp);
+			uk_pfree(uk_alloc_get_default(), addr, num_pages);
+			break;
+        }
+#endif
 		prev = tmp;
 		tmp = tmp->next;
 	}
