@@ -45,11 +45,11 @@ template rt_envvars_enabled()
 }
 template rt_cmdline_enabled()
 {
-    pragma(mangle, cPrefix ~ "rt_cmdline_enabled") __gshared bool rt_cmdline_enabled = true;
+    pragma(mangle, cPrefix ~ "rt_cmdline_enabled") __gshared bool rt_cmdline_enabled = false;
 }
 template rt_options()
 {
-    pragma(mangle, cPrefix ~ "rt_options") __gshared string[] rt_options = [];
+    pragma(mangle, cPrefix ~ "rt_options") __gshared string[] rt_options = ["oncycle=abort"];
 }
 
 import core.stdc.ctype : toupper;
