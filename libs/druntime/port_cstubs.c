@@ -90,3 +90,139 @@ struct cmsghdr * __cmsg_nxthdr(struct msghdr *msg, struct cmsghdr *cmsg)
     return NULL;
 }
 
+/*
+ * math.d
+ */
+int __fpclassify(double x)
+{
+    if (x <= FLT_MAX)
+        return __fpclassifyf((float)x);
+    return 0;
+}
+
+int __fpclassifyl(long double x)
+{
+    if (x <= FLT_MAX)
+        return __fpclassifyf((float)x);
+    return 0;
+}
+
+int __isinf(double x)
+{
+    if (x <= FLT_MAX)
+        return __isinff((float)x);
+    return 0;
+}
+
+int __isinfl(long double x)
+{
+    if (x <= FLT_MAX)
+        return __isinff((float)x);
+    return 0;
+}
+
+int __isnan(double x)
+{
+    if (x <= FLT_MAX)
+        return __isnanf((float)x);
+    return 0;
+}
+
+int __isnanl(long double x)
+{
+    if (x <= FLT_MAX)
+        return __isnanf((float)x);
+    return 0;
+}
+
+int __signbit(double x)
+{
+    if (x <= FLT_MAX)
+        return __signbitf((float)x);
+    return 0;
+}
+
+int __signbitl(long double x)
+{
+    if (x <= FLT_MAX)
+        return __signbitf((float)x);
+    return 0;
+}
+
+int __finite(double x)
+{
+    return 0;
+}
+
+int __finitel(long double x)
+{
+    return 0;
+}
+
+int __finitef(float x)
+{
+    return 0;
+}
+
+long lroundl(long double x)
+{
+    if (x <= DBL_MAX)
+        return lround((double)x);
+    return 0;
+}
+
+long double roundl(long double x)
+{
+    if (x <= DBL_MAX)
+        return round((double)x);
+    return 0;
+}
+
+long double logbl(long double x)
+{
+    if (x <= DBL_MAX)
+        return logb((double)x);
+    return 0;
+}
+
+long double modfl(long double value, long double *iptr)
+{
+    return modf((double)value, (double *)iptr);
+}
+
+long double scalbnl(long double x, int n)
+{
+    if (x <= DBL_MAX)
+        return scalbn((double)x, n);
+    return 0;
+}
+
+
+long double cbrtl(long double x)
+{
+    if (x <= DBL_MAX)
+        return cbrt((double)x);
+    return 0;
+}
+
+long double nearbyintl(long double x)
+{
+    if (x <= DBL_MAX)
+        return nearbyint((double)x);
+    return 0;
+}
+
+long double remainderl(long double x, long double y)
+{
+    if (x <= DBL_MAX && y <= DBL_MAX)
+        return remainder((double)x, (double)y);
+    return 0;
+}
+
+long double remquol(long double x, long double y, int *quo)
+{
+    if (x <= DBL_MAX && y <= DBL_MAX)
+        return remquo((double)x, (double)y, quo);
+    return 0;
+}
+
