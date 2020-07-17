@@ -469,7 +469,9 @@ $(3): $(2) | prepare
 	$(call build_cmd,DMD,$(1),$(3),\
 		$(DMD) -betterC $(DMDINCLUDES) $(DMDINCLUDES-y) \
 			$($(call vprefix_lib,$(1),DMDINCLUDES)) $($(call vprefix_lib,$(1),DMDINCLUDES-y)) \
-			$(2) -c -od=$(dir $(3))
+		    $(DMDFLAGS) $(DMDFLAGS-y) $($(call vprefix_lib,$(1),DMDFLAGS)) \
+            $($(call vprefix_lib,$(1),DMDFLAGS-y)) \
+            $(2) -c -od=$(dir $(3))
 	)
 
 UK_SRCS-y += $(2)
