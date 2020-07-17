@@ -1,9 +1,35 @@
-config LIBDRUNTIME
+menuconfig LIBDRUNTIME
 	bool "druntime"
 	default n
-	select LIBNOLIBC if !HAVE_LIBC
-	select LIBUKDEBUG
 	select LIBUKALLOC
+	select LIBPOSIX_SYSINFO
+    select LIBPOSIX_USER
+	select LIBSYSCALL_SHIM
+    select LIBNEWLIBC
+	select LIBUKMMAP
+	select LIBCOMPILER_RT
+	select LIBCOMPILER_RT_ATOMIC
+    select LIBUNWIND
+	select LIBCXX
+	select LIBCXXABI
+	select LIBPTHREAD_EMBEDDED
+	select LIBGCC
+	select LIBBACKTRACE
+	select LIBLWIP
+	select LIBUCONTEXT
 
 if LIBDRUNTIME
+
+config UNITTESTS
+    bool "Run Unittests"
+    default n
+if UNITTESTS
+endif
+
+config LIBPHOBOS
+    bool "Phobos Standard Library"
+    default n
+if LIBPHOBOS
+endif
+
 endif
