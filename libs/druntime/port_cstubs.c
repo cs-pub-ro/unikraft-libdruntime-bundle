@@ -226,3 +226,20 @@ long double remquol(long double x, long double y, int *quo)
     return 0;
 }
 
+/*
+ * libphobos
+ */
+void flockfile(FILE *fp) {}
+void funlockfile(FILE *fp) {}
+
+ssize_t getdelim (char** lineptr, size_t* n, int delimiter, FILE* stream)
+{
+    return 0;
+}
+
+char *tzname[2];
+
+int msync(void *first, size_t second, int third)
+{
+    return 0;
+}
