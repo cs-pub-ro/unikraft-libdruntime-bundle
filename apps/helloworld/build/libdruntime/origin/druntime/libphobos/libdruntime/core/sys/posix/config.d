@@ -46,7 +46,7 @@ version (CRuntime_Glibc)
     enum _REENTRANT          = true; // set by compiler when linking -pthread
 
     // deduced <features.h>
-    enum __USE_FILE_OFFSET64 = _FILE_OFFSET_BITS == 64;
+    enum __USE_FILE_OFFSET64 = false;
     enum __USE_LARGEFILE     = __USE_FILE_OFFSET64 && !__REDIRECT;
     enum __USE_LARGEFILE64   = __USE_FILE_OFFSET64 && !__REDIRECT;
 
