@@ -67,21 +67,24 @@ LIBDRUNTIME_EXTRACTED = $(LIBDRUNTIME_ORIGIN)/druntime
 ################################################################################
 # Library includes
 ################################################################################
-LIBDRUNTIME_COMMON_INCLUDES-y = -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime #\
-# The following are includes used in the Go port. It is worth analyzing whether their
-# motivation also applies here
-#	-I$(LIBDRUNTIME_EXTRACTED)/libffi/include \
-#	-I$(LIBDRUNTIME_EXTRACTED)/libgcc \
-#	-I$(LIBDRUNTIME_EXTRACTED)/gcc/include \
-#	-I$(LIBDRUNTIME_EXTRACTED)/gcc/
-#LIBDRUNTIME_COMMON_INCLUDES-$(CONFIG_ARCH_X86_64) += -I$(LIBDRUNTIME_EXTRACTED)/libffi/src/x86
-#LIBDRUNTIME_COMMON_INCLUDES-$(CONFIG_ARCH_X86_64) += -I$(LIBDRUNTIME_EXTRACTED)/gcc/config/i386
+LIBDRUNTIME_COMMON_INCLUDES-y = -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime \
+							-I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/ \
+							-I$(LIBDRUNTIME_BASE)
+
+# Not to be added unless Phobos is also compiled. Otherwise, a unittest in core/internal/arrayop
+# will successfully import a std source file leading to undefined reference
+ifdef CONFIG_LIBPHOBOS
+	LIBDRUNTIME_COMMON_INCLUDES-y += -I$(LIBDRUNTIME_EXTRACTED)/libphobos/src
+endif
+
 LIBDRUNTIME_ASINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 LIBDRUNTIME_CINCLUDES-y  = $(LIBDRUNTIME_COMMON_INCLUDES-y)
 
 ################################################################################
 # Global flags
-GDCINCLUDES-y = $(LIBDRUNTIME_COMMON_INCLUDES-y)
+GDCINCLUDES-y += $(LIBDRUNTIME_COMMON_INCLUDES-y)
+
+DMDINCLUDES-y += -I$(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/
 
 CFLAGS += -DDRUNTIME
 ################################################################################
@@ -94,21 +97,28 @@ LIBDRUNTIME_CFLAGS-y   += -fexceptions -fnon-call-exceptions \
 	-fplan9-extensions -fno-split-stack -Wall -Wextra -Wwrite-strings \
 	-Wcast-qual -Wno-unused-function -minline-all-stringops \
 	-Wno-implicit-function-declaration -D_GNU_SOURCE -D_LARGEFILE_SOURCE \
-	-D_FILE_OFFSET_BITS=64 -DDRT_BEGIN -DDRT_END
+	-D_FILE_OFFSET_BITS=64
 
 # Here you may add any version symbols, as needed
 LIBDRUNTIME_GDCFLAGS += $(LIBDRUNTIME_SUPPRESS_FLAGS_GDC)
 LIBDRUNTIME_GDCFLAGS += -fexceptions -fnon-call-exceptions \
 	-fno-split-stack -Wall -Wextra -Wno-unused-function -minline-all-stringops
-LIBDRUNTIME_GDCFLAGS += -fversion=UNIKRAFT #-fversion=Shared
+LIBDRUNTIME_GDCFLAGS += -fversion=UNIKRAFT
+
+ifdef CONFIG_UNITTESTS
+	LIBDRUNTIME_GDCFLAGS += -funittest
+endif
 
 ################################################################################
 # druntime code
 ################################################################################
+ifeq ($(D_COMPILER),gdc)
+
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/x86/switchcontext.S
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/config/common/threadasm.S
 
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_BASE)/port_cstubs.c
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_BASE)/htons_.c
 
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d|gcc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/libbacktrace.d|gcc
@@ -135,7 +145,7 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/intern
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/traits.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/hash.d|internal
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/internal/convert.d
-#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/math.d|stdc
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/math.d|stdc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/tgmath.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/errno.d|stdc
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/stdc/wchar_.d
@@ -197,7 +207,7 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/po
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/un.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/mman.d|posix
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/statvfs.d
-#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/socket.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/socket.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/utsname.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/ipc.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/core/sys/posix/sys/wait.d
@@ -228,7 +238,6 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/section
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/builtins.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/backtrace.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/deh.d
-LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/drtstuff.c
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/emutls.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/gthread.d
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gc/os.d
@@ -309,6 +318,145 @@ LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/monitor_
 #LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/dylib_fixes.c
 LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/rt/qsort.d
 
+
+ifdef CONFIG_LIBPHOBOS
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/process.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/unicode_norm.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/unicode_tables.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/unicode_grapheme.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/math/biguintcore.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/math/errorfunction.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/math/biguintnoasm.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/math/gammafunction.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/windows/advapi32.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/cstring.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/scopebuffer.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/test/dummyrange.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/test/range.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/test/uda.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/unicode_decomp.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/internal/unicode_comp.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/math.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/demangle.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/logger/nulllogger.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/logger/package.d|std.logger
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/logger/core.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/logger/filelogger.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/logger/multilogger.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/typecons.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/checkedint.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/typed.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/mmap_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/package.d|std.allocator
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/mallocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/gc_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/showcase.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/bucketizer.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/quantizer.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/package.d|std.allocator.building_blocks
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/free_tree.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/scoped_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/stats_collector.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/affix_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/segregator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/free_list.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/bitmapped_block.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/allocator_list.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/region.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/kernighan_ritchie.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/fallback_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/building_blocks/null_allocator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/experimental/allocator/common.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/array.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/conv.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/binaryheap.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/array.d|std.container
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/package.d|std.container
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/slist.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/dlist.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/util.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/container/rbtree.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/xml.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/getopt.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/file.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/bigint.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/uuid.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/random.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/backtracking.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/tests.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/ir.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/generator.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/parser.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/kickstart.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/internal/thompson.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/regex/package.d|std.regex
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/net/isemail.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/net/curl.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/outbuffer.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/json.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/range/package.d|std.range
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/range/interfaces.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/range/primitives.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/numeric.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/uni.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/path.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/meta.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/typecons.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/typetuple.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/mathspecial.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/signals.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/uri.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/utf.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/variant.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/stdio.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/ripemd.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/package.d|std.digest
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/murmurhash.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/hmac.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/digest.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/md.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/sha.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/digest/crc.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/sorting.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/package.d|std.algorithm
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/searching.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/mutation.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/iteration.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/setops.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/internal.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/algorithm/comparison.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/concurrency.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/string.d|std
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/socket.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/windows/charset.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/windows/registry.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/windows/syserror.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/mmfile.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/csv.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/base64.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/exception.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/bitmanip.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/stdint.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/functional.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/zlib.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/compiler.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/encoding.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/ascii.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/system.d
+#LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/zip.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/complex.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/traits.d|std
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/parallelism.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/format.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/date.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/package.d|std.datetime
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/interval.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/timezone.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/stopwatch.d
+LIBDRUNTIME_SRCS-y += $(LIBDRUNTIME_EXTRACTED)/libphobos/src/std/datetime/systime.d
+endif
+
+endif
 
 # Instantiate the config.d.in and libbacktrace.d.in templates
 $(LIBDRUNTIME_EXTRACTED)/libphobos/libdruntime/gcc/config.d: $(LIBDRUNTIME_EXTRACTED)/libphobos/config.status
