@@ -27,7 +27,6 @@ DMDINCLUDES += -I$(CONFIG_UK_BASE)/include
 GDCFLAGS    += -U __linux__ -U __FreeBSD__ -U __sun__
 GDCFLAGS    += -fno-stack-protector -fno-omit-frame-pointer -fno-tree-sra
 GDCFLAGS    += -fno-split-stack -Wall -Wextra
-GDCFLAGS	+= -fno-moduleinfo
 GDCINCLUDES += -nostdinc -nostdlib -nophoboslib -I$(CONFIG_UK_BASE)/include
 
 # Set the text and data sections to be readable and writable. Also,
