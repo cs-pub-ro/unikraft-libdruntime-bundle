@@ -1,0 +1,24 @@
+[submodule "libs/lib-lwip"]
+	path = libs/lib-lwip
+	url = https://github.com/unikraft/lib-lwip
+[submodule "libs/lib-newlib"]
+	path = libs/lib-newlib
+	url = https://github.com/unikraft/lib-newlib
+[submodule "libs/lib-pthread-embedded"]
+	path = libs/lib-pthread-embedded
+	url = https://github.com/unikraft/lib-pthread-embedded
+[submodule "libs/lib-libucontext"]
+	path = libs/lib-libucontext
+	url = https://github.com/unikraft/lib-libucontext
+[submodule "libs/lib-libunwind"]
+	path = libs/lib-libunwind
+	url = https://github.com/unikraft/lib-libunwind
+[submodule "libs/lib-libcxxabi"]
+	path = libs/lib-libcxxabi
+	url = https://github.com/unikraft/lib-libcxxabi
+[submodule "libs/lib-libcxx"]
+	path = libs/lib-libcxx
+	url = https://github.com/unikraft/lib-libcxx
+[submodule "libs/lib-compiler-rt"]
+	path = libs/lib-compiler-rt
+	url = https://github.com/unikraft/lib-compiler-rt
