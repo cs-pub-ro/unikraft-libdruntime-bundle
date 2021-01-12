@@ -22,3 +22,6 @@
 [submodule "libs/lib-compiler-rt"]
 	path = libs/lib-compiler-rt
 	url = https://github.com/unikraft/lib-compiler-rt
+[submodule "libs/lib-gcc"]
+	path = libs/lib-gcc
+	url = https://github.com/unikraft/lib-gcc
