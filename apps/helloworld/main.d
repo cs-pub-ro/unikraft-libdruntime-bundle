@@ -1,8 +1,5 @@
-extern (C)
-{
-    void main() {
-        import core.stdc.stdio;
+void main() {
+    import core.stdc.stdio;
 
-        printf("Hello world!\n");
-    }
+    printf("Hello world!\n");
 }

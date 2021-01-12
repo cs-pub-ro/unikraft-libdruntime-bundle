@@ -1,3 +1,7 @@
 $(eval $(call addlib,apphelloworld))
 
+# Compiled as make D_COMPILER=dmd
+# APPHELLOWORLD_SRCS-y += $(APPHELLOWORLD_BASE)/externc_main.d
+
+# Compiled as make D_COMPILER=gdc
 APPHELLOWORLD_SRCS-y += $(APPHELLOWORLD_BASE)/main.d
