@@ -1,0 +1,62 @@
+From 356f85a077adfcb4a1c66163b7d3a2c38a1667b3 Mon Sep 17 00:00:00 2001
+From: Marius-Cristian Baciu <2309bmcristi@gmail.com>
+Date: Sat, 18 Jul 2020 23:58:35 +0300
+Subject: [PATCH] Solve standard descriptors visibility problem
+
+initStdio() is a routine we have defined in D runtime lib's gluecode.c
+---
+ libphobos/libdruntime/core/stdc/stdio.d | 10 +++++++---
+ libphobos/libdruntime/rt/dmain2.d       |  7 +++++++
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/libphobos/libdruntime/core/stdc/stdio.d b/libphobos/libdruntime/core/stdc/stdio.d
+index 6ce3f9d13..8ed585bcb 100644
+--- a/libphobos/libdruntime/core/stdc/stdio.d
++++ b/libphobos/libdruntime/core/stdc/stdio.d
+@@ -907,11 +907,15 @@ else version (CRuntime_Glibc)
+     }
+ 
+     ///
+-    extern shared FILE* stdin;
++    extern shared FILE* _stdin;
+     ///
+-    extern shared FILE* stdout;
++    extern shared FILE* _stdout;
+     ///
+-    extern shared FILE* stderr;
++    extern shared FILE* _stderr;
++
++    alias _stdin    stdin;
++    alias _stdout   stdout;
++    alias _stderr   stderr;
+ }
+ else version (Darwin)
+ {
+diff --git a/libphobos/libdruntime/rt/dmain2.d b/libphobos/libdruntime/rt/dmain2.d
+index f45565c97..7e42b63fb 100644
+--- a/libphobos/libdruntime/rt/dmain2.d
++++ b/libphobos/libdruntime/rt/dmain2.d
+@@ -156,6 +156,10 @@ extern (C) __gshared bool rt_trapExceptions = true;
+ 
+ alias void delegate(Throwable) ExceptionHandler;
+ 
++version (UNIKRAFT) {
++    extern (C) void initStdIO();
++}
++
+ /**
+  * Keep track of how often rt_init/rt_term were called.
+  */
+@@ -168,6 +172,9 @@ shared size_t _initCount;
+  */
+ extern (C) int rt_init()
+ {
++    version (UNIKRAFT) {
++        initStdIO();
++    }
+     /* @@BUG 11380 @@ Need to synchronize rt_init/rt_term calls for
+        version (Shared) druntime, because multiple C threads might
+        initialize different D libraries without knowing about the
+-- 
+2.17.1
+

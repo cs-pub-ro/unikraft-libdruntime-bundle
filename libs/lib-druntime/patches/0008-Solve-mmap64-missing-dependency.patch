@@ -1,0 +1,38 @@
+From 889f9ea51a7158c4fa9fe9efcc3ffaf0e23bd294 Mon Sep 17 00:00:00 2001
+From: Marius-Cristian Baciu <2309bmcristi@gmail.com>
+Date: Mon, 20 Jul 2020 01:01:14 +0300
+Subject: [PATCH 1/2] Solve mmap64() missing dependency
+
+---
+ libphobos/libdruntime/core/sys/posix/sys/mman.d | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/libphobos/libdruntime/core/sys/posix/sys/mman.d b/libphobos/libdruntime/core/sys/posix/sys/mman.d
+index c0bee5528..618e9974c 100644
+--- a/libphobos/libdruntime/core/sys/posix/sys/mman.d
++++ b/libphobos/libdruntime/core/sys/posix/sys/mman.d
+@@ -234,11 +234,16 @@ int munmap(void*, size_t);
+ 
+ version (CRuntime_Glibc)
+ {
+-    static if (__USE_LARGEFILE64) void* mmap64(void*, size_t, int, int, int, off_t);
+-    static if (__USE_FILE_OFFSET64)
+-        alias mmap = mmap64;
+-    else
+-        void* mmap(void*, size_t, int, int, int, off_t);
++    version (UNIKRAFT) {
++        void *mmap(void *, size_t, int, int, int, off_t);
++        alias mmap mmap64;
++    } else {
++        static if (__USE_LARGEFILE64) void* mmap64(void*, size_t, int, int, int, off_t);
++        static if (__USE_FILE_OFFSET64)
++            alias mmap = mmap64;
++        else
++            void* mmap(void*, size_t, int, int, int, off_t);
++    }
+     int munmap(void*, size_t);
+ }
+ else version (Darwin)
+-- 
+2.17.1
+

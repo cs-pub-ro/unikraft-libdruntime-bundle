@@ -1,0 +1,28 @@
+From 18e75c8e7e6b61ed235fa7279b448a4951f09413 Mon Sep 17 00:00:00 2001
+From: Marius-Cristian Baciu <2309bmcristi@gmail.com>
+Date: Sun, 19 Jul 2020 03:05:49 +0300
+Subject: [PATCH 3/6] Solve clock routine bug
+
+clock_getres() returning 0 results in a floating point exception
+---
+ libphobos/libdruntime/core/time.d | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libphobos/libdruntime/core/time.d b/libphobos/libdruntime/core/time.d
+index a7640ec19..bdcf6cdd6 100644
+--- a/libphobos/libdruntime/core/time.d
++++ b/libphobos/libdruntime/core/time.d
+@@ -2813,8 +2813,8 @@ struct TickDuration
+                     //or worse, but the time is updated much more frequently
+                     //than that). In such cases, we'll just use nanosecond
+                     //resolution.
+-                    ticksPerSec = ts.tv_nsec >= 1000 ? 1_000_000_000
+-                                                     : 1_000_000_000 / ts.tv_nsec;
++                    ticksPerSec = ts.tv_nsec >= 1000 || ts.tv_nsec == 0
++                        ? 1_000_000_000 : 1_000_000_000 / ts.tv_nsec;
+                 }
+             }
+             else
+-- 
+2.17.1
+
