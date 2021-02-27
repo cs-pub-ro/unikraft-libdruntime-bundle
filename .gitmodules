@@ -25,3 +25,6 @@
 [submodule "libs/lib-gcc"]
 	path = libs/lib-gcc
 	url = https://github.com/unikraft/lib-gcc
+[submodule "libs/unikraft-libdruntime"]
+	path = libs/lib-druntime
+	url = https://github.com/cs-pub-ro/unikraft-libdruntime
